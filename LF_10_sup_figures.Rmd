@@ -1,0 +1,307 @@
+---
+title: "LF_10_sup_figures"
+author: "Caroline McKeon"
+date: "10/19/2021"
+output: word_document
+---
+
+```{r include=FALSE}
+library(tidyverse)
+library(broom.mixed)
+library(kableExtra)
+library(ggplot2)
+library(sjPlot) ## for the set_theme function
+library(viridis)
+library(ggpubr)
+library(ggeffects)
+library(gtools)
+library(ggridges)
+library(papeR)
+library(kableExtra)
+library(data.table)
+library(cowplot)
+library(ggdark)
+knitr::opts_chunk$set(echo = FALSE, warning=FALSE, message = FALSE,
+	fig.height = 8, fig.width = 12)
+```
+
+```{r plotting themes}
+# set graphical parameters
+
+# blank theme
+set_theme(
+  base = theme_classic(),
+  axis.title.size = 1,
+  axis.textsize = 1,
+  legend.size = 1,
+  legend.title.size = 1,
+  geom.label.size = 1,
+  plot.margin = margin(1,1,1,1, "pt")
+)
+
+## text editing
+get_wraper <- function(width) {
+  function(x) {
+    lapply(strwrap(x, width = width, simplify = FALSE), paste, collapse="\n")}}
+## colour palette
+cb_pal <- c("#01665e", "#5ab4ac","#c7eae5", "#d8b365", 
+            "#8c510a")
+```
+
+
+```{r}
+# read in oc model
+f_oc_sum <- readRDS("f_oc_sum.rds")
+f_oc_sum$land_av <- NA
+f_oc_sum$land_av[which(is.na(f_oc_sum$raunk_lf) & !is.na(f_oc_sum$landuse))] <- 1
+
+f_oc_sum$landuse <-gsub(" vegetation", "", f_oc_sum$landuse, ignore.case = TRUE)
+f_oc_sum$landuse <- as.character(f_oc_sum$landuse)
+f_oc_sum$landuse[f_oc_sum$landuse == "Secondary (indeterminate age)"] <- "unknown Secondary"
+f_oc_sum$landuse <- factor(f_oc_sum$landuse)
+
+## Yvonne's ordering
+f_oc_sum$landuse <- factor(f_oc_sum$landuse, 
+                      levels = c("Primary forest", "unknown Secondary",  "Mature secondary", 
+                                 "Intermediate secondary", "Young secondary",
+                                 "Plantation forest", "Primary non-forest", "Pasture", "Cropland", "Urban"))
+
+## create column for grey bars
+f_oc_sum$cat <- as.numeric(f_oc_sum$landuse)
+f_oc_sum$rep[f_oc_sum$landuse %in% c("Primary forest",  "Mature secondary", "Young secondary",
+                                     "Primary non-forest", "Cropland")] <- "white"
+f_oc_sum$rep[f_oc_sum$landuse %in% c("unknown Secondary","Intermediate secondary",
+                                     "Plantation forest", "Pasture", "Urban")] <- "grey"
+```
+
+```{r, include=FALSE}
+# read in pc model
+f_pc_sum <- readRDS("f_pc_sum.rds")
+f_pc_sum$landuse <- as.character(f_pc_sum$landuse)
+f_pc_sum$landuse[f_pc_sum$clim == "species richness"] <- "Mature secondary"
+f_pc_sum <- f_pc_sum[order(-f_pc_sum$raunk_lf, f_pc_sum$landuse),]
+f_pc_sum$land_av <- 0
+f_pc_sum$land_av[which(is.na(f_pc_sum$raunk_lf) & !is.na(f_pc_sum$landuse))] <- 1
+
+f_pc_sum$landuse <-gsub(" vegetation", "", f_pc_sum$landuse, ignore.case = TRUE)
+f_pc_sum$landuse <- as.character(f_pc_sum$landuse)
+f_pc_sum$landuse[f_pc_sum$landuse == "Secondary (indeterminate age)"] <- "unknown Secondary"
+f_pc_sum$landuse <- factor(f_pc_sum$landuse)
+
+f_pc_sum$landuse <- factor(f_pc_sum$landuse)
+## Yvonne's ordering
+f_pc_sum$landuse <- factor(f_pc_sum$landuse, 
+                      levels = c("Primary forest", "unknown Secondary", "Mature secondary",
+                                 "Intermediate secondary", "Young secondary",
+                                 "Plantation forest", "Primary non-forest", "Pasture", "Cropland", "Urban"))
+f_pc_sum$cat <- as.numeric(f_pc_sum$landuse)
+f_pc_sum$rep[f_pc_sum$landuse %in% c("Primary forest", "Mature secondary", "Young secondary",
+                                     "Primary non-forest", "Cropland")] <- "white"
+f_pc_sum$rep[f_pc_sum$landuse %in% c("unknown Secondary","Intermediate secondary",
+                                     "Plantation forest", "Pasture", "Urban")] <- "grey"
+
+```
+
+```{r}
+## read in model data
+if(!exists("ModelDF")) {
+  if(file.exists("Data_ModelDF.rds")) {
+    try(ModelDF <- readRDS("Data_ModelDF.rds"))
+  } else warning("ModelDF does not exist in this directory")
+}
+
+ModelDF$Predominant_habitat <-gsub(" vegetation", "", ModelDF$Predominant_habitat, ignore.case = TRUE)
+ModelDF$Predominant_habitat <- as.character(ModelDF$Predominant_habitat)
+ModelDF$Predominant_habitat[ModelDF$Predominant_habitat == "Secondary (indeterminate age)"] <- "unknown Secondary"
+ModelDF$Predominant_habitat <- factor(ModelDF$Predominant_habitat)
+
+## Yvonne's ordering
+ModelDF$Predominant_habitat <- factor(ModelDF$Predominant_habitat, 
+                      levels = c("Primary forest", "unknown Secondary",  "Mature secondary", 
+                                 "Intermediate secondary", "Young secondary",
+                                 "Plantation forest", "Primary non-forest", "Pasture", "Cropland", "Urban"))
+```
+
+*Supplementary Information for “Land use and climate affect plant occurrence and abundance across life forms”*
+
+## Appendix S1 – Table of data sources 
+
+
+## Appendix S2 – Map of data origins 
+
+```{r, fig.height = 16, fig.width = 24}
+source("plot_enviro_pca.R")
+biome_rast <- raster("anthromes_2_base_data_GeoTIFF/potveg.tif")
+biome_rast <- calc(biome_rast, fun=function(x){ x[x <= 0] <- NA; return(x)} )
+  par(bg= "black", bty = "l", col="white", col.main = "white", col.lab = "white", col.axis = "white")
+plot(biome_rast, col=viridis_pal(option="C")(900))
+  points(full_clim[, 'Longitude'], full_clim[,'Latitude'], pch = 21, col = "green", cex = 2)
+```
+
+```{r fig.height = 8, fig.width = 10}
+biome <- readRDS("average_biome_clim_vars.rds")
+biome$biome <- factor(biome$biome, 
+                      levels = c("Tropical Evergreen Woodland", "Tropical Deciduous Woodland", 
+                                 "Dense Shrubland", "Savanna", "Open Shrubland", "Deserts and Barren", 
+                                 "Temperate Evergreen Woodland", "Temperate Deciduous Woodland", 
+                                 "Grassland and Steppe", "Mixed Woodland", "Boreal Woodland", 
+                                 "Tundra"))
+  biome_ave <-ggplot(biome, aes(mat, map, colour = biome)) + 
+  geom_boxplot(size = 4) +
+  labs(colour = "Biome", x = "MAT (degrees C)", y = "MAP (mm)") + 
+  scale_color_viridis(discrete = TRUE, option = "plasma") + 
+    dark_theme_gray() + theme(legend.position="bottom") 
+biome_ave
+```
+
+
+## Appendix S3 – Visualisation of data
+
+```{r, fig.height= 8, fig.width= 12}
+## plot model data
+lu <- ggplot(ModelDF, aes(x=Predominant_habitat)) +
+    geom_bar(aes(x=Predominant_habitat),  fill = "white", size=1, alpha = 1, show.legend = F) +
+  geom_bar(data = ModelDF[ModelDF$Diversity_metric == "percent cover" & ModelDF$Measurement != 0,], 
+               aes(x=Predominant_habitat),  size=1, alpha = 1, show.legend = F) +
+       theme(axis.text.x = element_text(angle = 45, vjust = 0.5)) +
+               scale_x_discrete(labels = get_wraper(10)) +
+  labs(title = "A", x = "Land use") 
+
+raunk <- ggplot(ModelDF, aes(x=raunk_lf)) +
+    geom_bar(aes(x=raunk_lf),  fill = "white", size=1, alpha = 1, show.legend = F) +
+  geom_bar(data = ModelDF[ModelDF$Diversity_metric == "percent cover" & ModelDF$Measurement != 0,], 
+               aes(x=raunk_lf),  size=1, alpha = 1, show.legend = F) +
+       theme(axis.text.x = element_text(angle = 45, vjust = 0.5)) +
+               scale_x_discrete(labels = get_wraper(10)) +
+  labs(title = "B", x = "Life form") 
+
+lu2 <- ggplot(ModelDF[ModelDF$Diversity_metric == "percent cover" & ModelDF$Measurement != 0,],
+              aes(x=Predominant_habitat)) +
+    geom_bar(aes(x=Predominant_habitat), size=1, alpha = 1, show.legend = F) +
+       theme(axis.text.x = element_text(angle = 45, vjust = 0.5)) +
+               scale_x_discrete(labels = get_wraper(10),drop=FALSE) +
+  labs(title = "C", x = "Land use") + ylim(0, 12500)
+       
+raunk2 <- ggplot(ModelDF[ModelDF$Diversity_metric == "percent cover" & ModelDF$Measurement != 0,], aes(x=raunk_lf)) +
+    geom_bar(aes(x=raunk_lf),  size=1, alpha = 1, show.legend = F) +
+       theme(axis.text.x = element_text(angle = 45, vjust = 0.5)) +
+               scale_x_discrete(labels = get_wraper(10)) +
+  labs(title = "D", x = "Life form") + ylim(0, 12500)
+```
+
+```{r, fig.height= 8, fig.width= 12}
+lu <- lu + theme(axis.title.x = element_blank(), axis.title.y = element_blank(), 
+                 axis.text.x = element_blank(),  axis.ticks.x = element_blank())
+lu2 <- lu2 + theme(axis.title.y = element_blank()) 
+raunk <- raunk + theme(axis.text.x = element_blank(), axis.title.x = element_blank(),
+                         axis.ticks.x = element_blank(), axis.title.y = element_blank())
+raunk2 <- raunk2 + theme(axis.title.y = element_blank())
+
+resp <- ggarrange(lu, raunk, lu2, raunk2,  nrow = 2, ncol = 2, align = "hv", heights = c(2, 1)) + theme(plot.margin = margin(0.1,0.1,0.1,0.1, "cm"))
+annotate_figure(resp, #top = text_grob("Relative proportions of model data", face = "bold", size = 20),
+                left = text_grob("Count", size = 15, rot = 90))
+```
+
+## Appendix S4 – Data validation extended methods 
+
+## Appendix S5 – Biome and Ecoregion visual summaries
+```{r fig.height = 4, fig.width = 10}
+biome <- readRDS("average_biome_clim_vars.rds")
+
+## make plot
+biome_ave <-ggplot(biome, aes(mat, map, colour = biome)) + 
+  geom_point(size = 4) +
+  geom_pointrange(aes(ymin=map - map_var, ymax=map + map_var)) + 
+  labs(colour = "Biome", x = "MAT (degrees C)", y = "MAP (mm)") + 
+  scale_color_viridis(discrete = TRUE)
+
+biome_var_ave <-ggplot(biome, aes(mat, mat_var, colour = biome)) + 
+  geom_point(size = 4) +
+  labs(colour = "Biome", x = "MAT (degrees C)", y = "MAT_var (degrees C)") + 
+  scale_color_viridis(discrete = TRUE)
+
+resp <-ggarrange(biome_ave, biome_var_ave, nrow = 1, ncol = 2, align = "hv", heights = c(1, 1), common.legend = TRUE, legend = "right") +
+  theme(plot.margin = margin(0.1,0.1,0.1,0.1, "cm")) 
+annotate_figure(resp, top = text_grob("Biome averages for climatic variables", face = "bold", size = 20))
+
+```
+
+```{r fig.height = 4, fig.width = 6}
+eco <- readRDS("average_ecoregion_clim_vars.rds")
+
+## make plot
+eco_ave <-ggplot(eco, aes(mat, map, colour = mat_var)) + 
+  geom_point(size = 4) +
+  geom_pointrange(aes(ymin=map - map_var, ymax=map + map_var)) + 
+  labs(title = "Ecoregion averages for climatic variables", colour = "MAT_var", x = "MAT (degrees C)", y = "MAP (mm)") + 
+  scale_color_viridis()
+
+
+resp <-ggarrange(eco_ave, nrow = 1, ncol = 1) +
+  theme(plot.margin = margin(0.1,0.1,0.1,0.1, "cm")) 
+annotate_figure(resp, top = text_grob("Ecoregion averages for climatic variables", face = "bold", size = 20))
+
+```
+
+```{r}
+data <- readRDS("sd_model_clim_data.rds")
+biome_diff <- readRDS("average_biome_diffs.rds")
+eco_diff <- readRDS("average_ecoregion_diffs.rds")
+vars <- c("map", "mat", "map_var", "mat_var")
+
+## plot comparison of average differences with 1 sd in model data
+par(mfrow =c(3,4), mar=c(2,2,2,2))
+
+for(i in names(data[,which(names(data) %in% vars)])){
+  par(bty = "l")
+  hist(data[,i], 
+       breaks = 300,
+       border = "grey", ylab = NULL, xlab = NULL,main = NULL, freq = F)
+  lines(density(data[,i]))
+  abline(v=mean(data[,i]),col="red", lwd = 2)
+  abline(v=median(data[,i]),lty=2,col="red", lwd = 2)
+  abline(v = mean(data[,i])+sd(data[,i]), lty = 1, col = "blue", lwd = 2)
+  abline(v = mean(data[,i])-sd(data[,i]), lty = 1, col = "blue", lwd = 2)}
+
+for(i in names(biome_diff[,which(names(biome_diff) %in% vars)])){
+  par(bty = "l")
+  hist(biome_diff[,i],
+       breaks = 300, 
+       border = "grey",ylab = NULL, xlab = NULL, main = NULL, freq = F)
+  lines(density(biome_diff[,i]))
+    abline(v=mean(biome_diff[,i]),col="red", lwd = 2)
+  abline(v=median(biome_diff[,i]),lty=2,col="red", lwd = 2)
+  abline(v = sd(data[,i]), lty = 1, col = "blue", lwd = 2)}
+
+for(i in names(eco_diff[,which(names(eco_diff) %in% vars)])){
+  par(bty = "l")
+  hist(eco_diff[,i],
+       breaks = 300,
+       border = "grey", ylab = NULL,main = NULL, xlab = paste(i), freq = F)
+  lines(density(eco_diff[,i]))
+    abline(v=mean(eco_diff[,i]),col="red", lwd = 2)
+  abline(v=median(eco_diff[,i]),lty=2,col="red", lwd = 2)
+  abline(v = sd(data[,i]), lty = 1, col = "blue", lwd = 2)}
+
+```
+
+## Appendix S6 – Effect size visual explanation
+
+## Appendix S7 – Extended references list
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,483 @@
+---
+title: "LF_08_clim_biome_ecoregion"
+author: "Caroline McKeon"
+date: "12/9/2020"
+output: pdf_document
+---
+
+## set up
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(raster)
+library(rgdal)
+library(data.table)
+library(sjPlot) ## for the set_theme function
+library(viridis)
+library(ggpubr)
+library(ggeffects)
+library(gtools)
+library(ggridges)
+library(papeR)
+library(kableExtra)
+library(viridis)
+library(gdalUtils)
+
+## create logit transformation function
+logitTransform <- function(x) { log(x/(1-x)) }
+'%nin%' = Negate('%in%')
+knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message = FALSE, fig.width=16, fig.height=9.7) 
+```
+
+```{r}
+# blank theme
+set_theme(
+  base = theme_classic(),
+  axis.title.size = 2,
+  axis.textsize = 1,
+  legend.size = 1,
+  legend.title.size = 1,
+  geom.label.size = 1,
+  plot.margin = margin(0.5,0.5, 0.5,0.5,"pt"))
+
+## text editing
+get_wraper <- function(width) {
+  function(x) {
+    lapply(strwrap(x, width = width, simplify = FALSE), paste, collapse="\n")}}
+## colour palett
+cb_pal <- c("#01665e", "#5ab4ac","#c7eae5", "#d8b365", 
+            "#8c510a")
+```
+
+read in climate data
+```{r}
+mat <-raster('bio1.bil') ## mean annual temperature (C*10)
+map <-raster('bio12.bil') ## mean annual precipatation (mm)
+map_var <-raster('bio15.bil') ## mean annual precip coeff variation
+mat_var <-raster('bio4.bil') ## mean annual temp SD*100
+if(file.exists("Data_ModelDF_unscaled.rds")) {
+    try(unscaled_data <- readRDS("Data_ModelDF_unscaled.rds"))
+  } else warning("ModelDF_unscaled does not exist in this directory")
+```
+
+
+## Biomes
+using data from Elis's anthromes to try figure out some average biome cliamte-clines
+```{r eval=FALSE, include=FALSE}
+biome_rast <- raster("anthromes_2_base_data_GeoTIFF/potveg.tif")
+biome_rast <- calc(biome_rast, fun=function(x){ x[x <= 0] <- NA; return(x)} )
+plot(biome_rast, col=viridis_pal(option="C")(900))
+
+biome_rast <- projectRaster(biome_rast, mat)
+clim_map <- brick(map, mat, map_var, mat_var, biome_rast)
+
+## #extract climate values for coordinates in (full) PREDICTS dataset
+full_clim <- data.frame(raster::extract(clim_map, y=seq(1,7776000,1), df=TRUE)) 
+
+full_clim <- unique(full_clim)
+new <- full_clim[,2:6]
+names(new) <- c("map", "mat", "map_var", "mat_var","biome") 
+new <- new[new$biome >= 1,]
+new <- drop_na(new)
+new$biome <- round(new$biome, 0)
+
+for (i in 1:12){
+  new$map[new$biome == i] <- mean(new$map[new$biome == i])
+  new$mat[new$biome == i] <- mean(new$mat[new$biome == i])
+  new$map_var[new$biome == i] <- mean(new$map_var[new$biome == i])
+  new$mat_var[new$biome == i] <- mean(new$mat_var[new$biome == i])
+}
+
+new <- unique(new)
+
+b <- c("Tropical Evergreen Woodland", "Tropical Deciduous Woodland", "Temperate Evergreen Woodland", "Temperate Deciduous Woodland", 
+"Boreal Woodland", "Mixed Woodland", "Savanna", "Grassland and Steppe", "Dense Shrubland", "Open Shrubland", "Tundra", "Deserts and Barren")
+
+new <- new[order(new$biome),]
+new$biome <- b
+new$mat_var <- new$mat_var/100
+new$mat <- new$mat/10
+for (i in names(Filter(is.numeric, new))) {
+new[,i] <- round(new[,i], 2)}
+new <- new[order(-new$mat),]
+
+biome$biome <- factor(biome$biome, 
+                      levels = c("Tropical Evergreen Woodland", "Tropical Deciduous Woodland", 
+                                 "Dense Shrubland", "Savanna", "Open Shrubland", "Deserts and Barren", 
+                                 "Temperate Evergreen Woodland", "Temperate Deciduous Woodland", 
+                                 "Grassland and Steppe", "Mixed Woodland", "Boreal Woodland", 
+                                 "Tundra"))
+
+#saveRDS(new, "average_biome_clim_vars.rds")
+```
+
+```{r}
+biome <- readRDS("average_biome_clim_vars.rds")
+```
+
+
+## Ecoregions
+
+```{r eval=FALSE, include=FALSE}
+#eco <- shapefile("terr-ecoregions-TNC/tnc_terr_ecoregions.shp")
+# teow <- readOGR(dsn = "official", layer = "wwf_terr_ecos")
+# x <- rasterize(teow, mat)
+# writeRaster(x, "teow.grd")
+#x <-gdalUtils::gdal_rasterize(teow, mat)
+# levels(x)
+#a <- deratify(x, "ECO_NAME")
+#writeRaster(a, "teow_econame.grd")
+eco_rast <- raster("teow_econame.grd")
+
+clim_map <- brick(map, mat, map_var, mat_var, eco_rast)
+
+## #extract climate values for coordinates in (full) PREDICTS dataset
+full_clim <- data.frame(raster::extract(clim_map, y=seq(1,7776000,1), df=TRUE)) 
+
+full_clim <- full_clim[which(!is.na(full_clim$ECO_NAME)),]
+new <- full_clim[,-1]
+new <- unique(new)
+names(new) <- c("map", "mat", "map_var", "mat_var","eco") 
+new <- drop_na(new)
+
+#plot(eco_rast, col=viridis_pal(option="C")(900))
+
+for (i in 1:826){
+  print(i)
+  new$map[new$eco == i] <- mean(new$map[new$eco == i])
+  new$mat[new$eco == i] <- mean(new$mat[new$eco == i])/10
+  new$map_var[new$eco == i] <- mean(new$map_var[new$eco == i])
+  new$mat_var[new$eco == i] <- mean(new$mat_var[new$eco == i])/100
+}
+
+new <- unique(new)
+new <- new[order(-new$mat),]
+## drops 17 ecoregions (too coastal I assume)
+
+#saveRDS(new, "average_ecoregion_clim_vars.rds")
+```
+
+
+```{r}
+eco <- readRDS("average_ecoregion_clim_vars.rds")
+```
+
+
+```{r}
+average_diff <- function(clim_var, name, len){
+  x <- data.frame()
+  x <- as.data.frame(outer(clim_var,clim_var, "-"))
+  names(x) <- levels(factor(name))
+  rownames(x) <- levels(factor(name))
+  
+  ## get only lower triangle to avoid repetition
+  x[lower.tri(x,diag=TRUE)] <- NA
+  x <- x[,-1]
+  x <- x[-len,]
+
+  c <- c()
+  n <- c()
+  s <- as.data.frame(rep(rownames(x), (len-1)))
+  for(i in names(x)){
+    c <- append(c, x[,i])
+    n <- append(n, rep(i, (len-1)))
+    }
+  s$diff <- c
+  s$comp <- n
+  s <- drop_na(s)
+  return(s)
+  }
+```
+
+```{r}
+b <- as.data.frame(1:66)
+vars <- c("map", "mat", "map_var", "mat_var")
+for(j in names(biome[,which(names(biome) %in% vars)])){
+  #print(j)
+  b <- cbind(b, average_diff(biome[,j], biome$biome, 12))
+}
+names(b) <- c("1:66", "biome", "map", "comp", "rep(rownames(x), (len - 1))", 
+              "mat", "comp", "rep(rownames(x), (len - 1))", "map_var", "comp", 
+              "rep(rownames(x), (len - 1))", "mat_var", "comp_biome")
+biome_diff <- b[,which(names(b) %in% c("biome", "map", "mat", "map_var", "mat_var", "comp_biome"))]
+rm(b)
+```
+
+```{r}
+e <- data.frame(1:326836)
+vars <- c("map", "mat", "map_var", "mat_var")
+for(j in names(eco[,which(names(eco) %in% vars)])){
+  #print(j)
+  e <- cbind(e, average_diff(eco[,j], eco$eco, 809))
+}
+names(e) <- c("X1.326836", "eco", "map", "comp", 
+              "rep(rownames(x), (len - 1))", "mat", "comp", "rep(rownames(x), (len - 1))", 
+              "map_var", "comp", "rep(rownames(x), (len - 1))", "mat_var", "comp_eco")
+eco_diff <- e[,which(names(e) %in% c("eco","map", "mat", "map_var", "mat_var", "comp_eco"))]
+rm(e)
+```
+
+```{r}
+for (i in names(Filter(is.numeric, biome))) {
+  biome[,i] <- round(biome[,i], 2)}
+for (i in names(Filter(is.numeric, eco))) {
+  eco[,i] <- round(eco[,i], 2)}
+
+for (i in names(Filter(is.numeric, biome_diff))) {
+  biome_diff[,i] <- round(biome_diff[,i], 2)}
+for (i in names(Filter(is.numeric, eco_diff))) {
+  eco_diff[,i] <- round(eco_diff[,i], 2)}
+```
+
+get modulus of differences
+```{r}
+for (i in names(Filter(is.numeric, biome_diff))) {
+  biome_diff[,i] <- sqrt(biome_diff[,i]*biome_diff[,i])}
+for (i in names(Filter(is.numeric, eco_diff))) {
+  eco_diff[,i] <- sqrt(eco_diff[,i]*eco_diff[,i])}
+```
+
+get climate values used in model
+```{r}
+unscaled_vars <- c("unscaled_map", "unscaled_mat", "unscaled_map_var", "unscaled_mat_var")
+data<- unscaled_data[,which(names(unscaled_data) %in% 
+                              c("unscaled_map", "unscaled_mat", "unscaled_map_var", "unscaled_mat_var"))]
+data<- data[,c("unscaled_map", "unscaled_mat", "unscaled_map_var", "unscaled_mat_var")]
+data$unscaled_mat <- data$unscaled_mat/10
+data$unscaled_mat_var <- data$unscaled_mat_var/100
+names(data) <- vars
+```
+
+```{r}
+# saveRDS(data, "sd_model_clim_data.rds")
+# saveRDS(biome_diff, "average_biome_diffs.rds")
+# saveRDS(eco_diff, "average_ecoregion_diffs.rds")
+```
+
+```{r}
+for(i in vars){
+  print(i)
+  print(length(eco_diff[,i][eco_diff[,i] <= sd(data[,i])])/length(eco_diff[,i]))
+  }
+```
+
+
+safe
+```{r eval=FALSE, include=FALSE}
+par(mfrow =c(3,4), mar=c(4,2,3,2))
+
+for(i in names(data[,which(names(data) %in% vars)])){
+  hist(data[,i], freq = F,
+       breaks = 300,
+       border = "grey",
+       ylab = NULL,
+       main = paste("Model climate data"),
+       xlab = paste(i))
+  abline(v=mean(data[,i]),col="red", lwd = 2)
+  abline(v=median(data[,i]),lty=2,col="red", lwd = 2)
+  abline(v = mean(data[,i])+sd(data[,i]), lty = 1, col = "blue", lwd = 2)
+  abline(v = mean(data[,i])-sd(data[,i]), lty = 1, col = "blue", lwd = 2)}
+  # text(x = xmax, y = ymax, paste("Mean =", round(mean(data[,i]), 2), 
+  #                   "SD =",round(sd(data[,i]), 2),
+  #                    "Median =", round(median(data[,i]), 2)))}
+
+for(i in names(biome_diff[,which(names(biome_diff) %in% vars)])){
+  hist(biome_diff[,i],
+       breaks = 300, 
+       border = "grey",
+        ylab = NULL,
+       main = paste("biome difference"),
+       xlab = paste(i))
+    abline(v=mean(biome_diff[,i]),col="red", lwd = 2)
+  abline(v=median(biome_diff[,i]),lty=2,col="red", lwd = 2)
+  abline(v = sd(data[,i]), lty = 1, col = "blue", lwd = 2)}
+# , "Mean =", round(mean(biome_diff[,i]), 2),
+#                     "SD =",round(sd(biome_diff[,i]), 2),
+#                      "Median =", round(median(biome_diff[,i]), 2)
+
+for(i in names(eco_diff[,which(names(eco_diff) %in% vars)])){
+  hist(eco_diff[,i],
+       breaks = 300,
+       border = "grey",
+        ylab = NULL,
+       main = paste("ecoregion difference"),
+       xlab = paste(i))
+    abline(v=mean(eco_diff[,i]),col="red", lwd = 2)
+  abline(v=median(eco_diff[,i]),lty=2,col="red", lwd = 2)
+  abline(v = sd(data[,i]), lty = 1, col = "blue", lwd = 2)}
+# , "Mean =", round(mean(eco_diff[,i]), 2),
+#                     "SD =",round(sd(eco_diff[,i]), 2),
+#                      "Median =", round(median(eco_diff[,i]), 2)
+
+```
+
+
+
+
+```{r eval=FALSE, include=FALSE}
+d <- data.frame(1)
+for(i in names(data[,which(names(data) %in% vars)])){
+ d[1,i] <- sd(data[,i])
+ d[2,i] <- mean(data[,i])
+ d[3,i] <- median(data[,i])}
+d <- d[,-1]
+names(d) <- vars
+d <- rbind(c(rep(1,4)), d)
+#rownames(d) <- c("data", "sd", "mean", "median")
+
+b <- data.frame(1)
+for(i in names(biome_diff[,which(names(biome_diff) %in% vars)])){
+ b[1,i] <- sd(biome_diff[,i])
+ b[2,i] <- mean(biome_diff[,i])
+ b[3,i] <- median(biome_diff[,i])}
+b<- b[,-1]
+names(b) <- vars
+b <- rbind(c(rep(1,4)), b)
+#rownames(b) <- c("biome", "sd", "mean", "median")
+
+e <- data.frame(1)
+for(i in names(eco_diff[,which(names(eco_diff) %in% vars)])){
+ e[1,i] <- sd(eco_diff[,i])
+ e[2,i] <- mean(eco_diff[,i])
+ e[3,i] <- median(eco_diff[,i])}
+e<- e[,-1]
+names(e) <- vars
+e <- rbind(c(rep(1,4)), e)
+#rownames(e) <- c("ecoregion", "sd", "mean", "median")
+
+sum <- rbind(d,b,e)
+for (i in names(Filter(is.numeric, sum))) {
+  sum[,i] <- round(sum[,i], 2)}
+sum$rn <-c("Model data", "sd", "mean", "median","Biome", "sd", "mean", "median", "Ecoregion", "sd", "mean", "median")
+all_clim_ave <- sum[c(5,1:4)]
+#saveRDS(all_clim_ave, "all_clim_ave.rds")
+```
+
+```{r eval=FALSE, include=FALSE}
+# c <- list()
+#  c[["map"]] 
+ 
+c <- list()
+for(i in names(data[,which(names(data) %in% vars)])){
+c[[i]] <- print(ggplot(data, aes(x=data[,i])) + 
+    geom_histogram(aes(y=..density..), color="grey", fill="grey")+
+    geom_density(alpha=.2, fill="grey")+
+    geom_vline(aes(xintercept=mean(data[,i])),
+            color="black", size=1) +
+   geom_vline(aes(xintercept=median(data[,i])),
+            color="black", linetype="dashed", size=1) + 
+   geom_vline(aes(xintercept=mean(data[,i]) + sd(data[,i])),
+            color="red", size=1) + 
+      geom_vline(aes(xintercept=mean(data[,i]) - sd(data[,i])),
+            color="red", size=1) + 
+   theme(axis.text.x = element_blank(), axis.title.x = element_blank(),
+                         axis.ticks.x = element_blank(), axis.title.y = element_blank())) }
+c
+
+# c <- ggplot(data, aes(x=data[,i])) + 
+#     geom_histogram(aes(y=..density..), color="grey", fill="grey")+
+#     geom_density(alpha=.2, fill="grey")+
+#     geom_vline(aes(xintercept=mean(map)),
+#             color="black", size=1) +
+#    geom_vline(aes(xintercept=median(map)),
+#             color="black", linetype="dashed", size=1) + 
+#    geom_vline(aes(xintercept=mean(map) + sd(map)),
+#             color="red", size=1) + 
+#       geom_vline(aes(xintercept=mean(map) - sd(map)),
+#             color="red", size=1) + 
+#    theme(axis.text.x = element_blank(), axis.title.x = element_blank(),
+#                          axis.ticks.x = element_blank(), axis.title.y = element_blank()) 
+#  
+ egg::ggarrange(c[[1]], c[[2]],  nrow = 1, ncol = 2) 
+
+```
+
+```{r eval=FALSE, include=FALSE}
+c <- list()
+for(i in names(data[,which(names(data) %in% vars)])){
+ c[[i]] <- ggplot(data, aes(x=data[,i])) + 
+    geom_histogram(aes(y=..density..), color="black", fill="white")+
+    geom_density(alpha=.2, fill="#FF6666")+
+    geom_vline(aes(xintercept=mean(data[,i])),
+            color="black", size=1) +
+   geom_vline(aes(xintercept=median(data[,i])),
+            color="black", linetype="dashed", size=1)} 
+
+b <- list()
+for(i in names(biome_diff[,which(names(biome_diff) %in% vars)])){
+ b[[i]] <- ggplot(biome_diff, aes(x=biome_diff[,i])) + 
+    geom_histogram(aes(y=..density..), color="black", fill="white")+
+    geom_density(alpha=.2, fill="#FF6666")} 
+
+e <- list()
+for(i in names(eco_diff[,which(names(eco_diff) %in% vars)])){
+ e[[i]] <- ggplot(eco_diff, aes(x=eco_diff[,i])) + 
+    geom_histogram(aes(y=..density..), color="black", fill="white")+
+    geom_density(alpha=.2, fill="#FF6666")} 
+```
+
+```{r eval=FALSE, include=FALSE}
+# library(gridExtra)
+# #do.call(grid.arrange, c(c[[1]],b[[1]],e[[1]]))
+egg::ggarrange(c[[1]], c[[2]], c[[3]], c[[4]], b[[1]], b[[2]], b[[3]], b[[4]], e[[1]], e[[2]], e[[3]], e[[4]], nrow = 3, ncol = 4)  #, heights = c(0.75, 0.25)
+
+```
+
+```{r eval=FALSE, include=FALSE}
+data$group <- "data"
+biome_diff$group <- "biome"
+eco_diff$group <- "eco"
+
+d <- rbind(data[,i])
+
+mydata <- rbind(data,
+                biome_diff[, which(names(biome_diff) %in% c("map", "mat", "map_var", "mat_var", "group"))], 
+                eco_diff[, which(names(eco_diff) %in% c("map", "mat", "map_var", "mat_var", "group"))])
+
+dstack <- c()
+for(i in vars){
+  dstack <- as.data.frame(rbind(dstack, cbind(data[,i], i, "data")))}
+names(dstack) <- c("value", "var", "group")
+dstack$value <- as.numeric(as.character(dstack$value))
+
+bstack <- c()
+for(i in vars){
+  bstack <- as.data.frame(rbind(bstack, cbind(biome_diff[,i], i, "biome")))}
+names(bstack) <- c("value", "var", "group")
+
+estack <- c()
+for(i in vars){
+  estack <- as.data.frame(rbind(estack, cbind(eco_diff[,i], i, "eco")))}
+names(estack) <- c("value", "var", "group")
+
+```
+
+```{r eval=FALSE, include=FALSE}
+d <- ggplot(dstack, aes(x=value)) +
+    geom_histogram(aes(y=..density..), colour="black", fill="black") +
+    geom_density(alpha=.2, fill="#FF6666") +
+    geom_vline(aes(xintercept=mean(value)),color="black", size=1) +
+  geom_vline(aes(xintercept=median(value)), linetype="dashed",) +
+  facet_grid(cols = vars(var))
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

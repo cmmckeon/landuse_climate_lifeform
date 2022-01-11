@@ -1,0 +1,424 @@
+---
+title: "LF_06a_pc_estimates_"
+author: "Caroline McKeon"
+date: "9/17/2020"
+output:
+  word_document: default
+---
+
+## set up 
+```{r set up, echo=FALSE}
+library(DHARMa)
+library(glmmTMB)
+library(lme4)
+library(data.table)
+library(ggplot2)
+library(sjPlot) ## for the set_theme function
+library(viridis)
+library(ggpubr)
+library(ggeffects)
+library(gtools)
+library(ggridges)
+library(papeR)
+library(kableExtra)
+
+## create logit transformation function
+logitTransform <- function(x) { log(x/(1-x)) }
+'%nin%' = Negate('%in%')
+knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message = FALSE) 
+knitr::opts_chunk$set(warning=FALSE) 
+knitr::opts_chunk$set(fig.width=14, fig.height=7) 
+```
+
+```{r read in models}
+
+if(!exists("ModelDF")) {
+  if(file.exists("Data_ModelDF.rds")) {
+    try(ModelDF <- readRDS("Data_ModelDF.rds"))
+  } else warning("ModelDF does not exist in this directory")
+}
+
+if(file.exists("Data_ModelDF_unscaled.rds")) {
+    try(ModelDF_unscaled <- readRDS("Data_ModelDF_unscaled.rds"))
+  } else warning("ModelDF_unscaled does not exist in this directory")
+```
+
+```{r handle model dataframe}
+mydata <- ModelDF
+
+## handle model dataframe to get just percent cover data, with species levels in the right format
+levels(ModelDF$Best_guess_binomial) <- gsub(" ", "_", levels(ModelDF$Best_guess_binomial))
+mydata <- ModelDF[ModelDF$Diversity_metric == "percent cover", ]
+mydata <- mydata[mydata$Measurement !=0,]
+mydata <- unique(mydata)
+mydata$Measurement <- mydata$Measurement/100
+mydata$response <- scale(logitTransform(mydata$Measurement))
+mydata$animal <- mydata$Best_guess_binomial
+
+PR_pc <- readRDS("Data_PR_f_pc.rds")
+mydata <- droplevels(merge(mydata, PR_pc, by = "Best_guess_binomial",all.x = TRUE)) 
+
+unscaled_data <- ModelDF_unscaled
+
+levels(ModelDF_unscaled$Best_guess_binomial) <- gsub(" ", "_", levels(ModelDF$Best_guess_binomial))
+unscaled_data <- ModelDF_unscaled[ModelDF_unscaled$Diversity_metric == "percent cover", ]
+unscaled_data <- unscaled_data[unscaled_data$Measurement !=0,]
+unscaled_data <- unique(unscaled_data)
+unscaled_data$Measurement <- unscaled_data$Measurement/100
+unscaled_data$response <- scale(logitTransform(unscaled_data$Measurement))
+unscaled_data$animal <- unscaled_data$Best_guess_binomial
+
+unscaled_data <- droplevels(merge(unscaled_data, PR_pc, by = "Best_guess_binomial",all.x = TRUE)) 
+```
+
+```{r plotting themes}
+# blank theme
+set_theme(
+  base = theme_classic(),
+  axis.title.size = 2,
+  axis.textsize = 1.2,
+  legend.size = 2,
+  legend.title.size = 2,
+  geom.label.size = 3,
+  plot.margin = margin(3, 5, 1, 5, "pt")
+)
+
+## text editing
+get_wraper <- function(width) {
+  function(x) {
+    lapply(strwrap(x, width = width, simplify = FALSE), paste, collapse="\n")}}
+## colour palett
+cb_pal <- c("#01665e", "#5ab4ac","#c7eae5", "#d8b365", 
+            "#8c510a")
+```
+
+
+```{r eval=FALSE, include=FALSE}
+mean(mydata$pres_abs)
+logitTransform(mean(mydata$pres_abs))
+for (i in levels(mydata$Predominant_habitat)){
+  print(c(i, length(mydata$Predominant_habitat[mydata$Predominant_habitat == i])))
+}
+
+for (i in levels(mydata$raunk_lf)){
+  print(c(i, length(mydata$raunk_lf[mydata$raunk_lf == i])))
+}
+```
+
+## Model Estimates
+
+```{r handle labling and tidy format pc, eval=FALSE, include=FALSE}
+## dummy coding version
+f_pc_sum <- as.data.frame(summary(f_mod)[["coefficients"]])
+f_pc_sum <- setDT(f_pc_sum, keep.rownames = TRUE)[]
+
+## adding a new column f_pc_sum that codes for if a term is landuse, lifeform or other
+f_pc_sum$terms <- as.character(0)
+
+## Handling long term-names
+landuse <- c("Predominant_habitat", "Intercept")
+f_pc_sum$terms[grep(paste(landuse, collapse="|"), f_pc_sum$rn)] <- "land use"
+clim <- c("mat_var","map", "map_var", "mat")
+f_pc_sum$terms[grep(paste(clim, collapse="|"), f_pc_sum$rn)] <- "climate" 
+f_pc_sum$terms[grep(paste("Species_richness"), f_pc_sum$rn)] <- "species richness" 
+f_pc_sum$terms[grep(paste("humanfootprint_value"), f_pc_sum$rn)] <- "human footprint"
+lifeform <- c("raunk_lfchamaephyte", "raunk_lfcryptophyte", 
+              "raunk_lfhemicryptophyte", "raunk_lfphanerophyte", 
+              "raunk_lftherophyte")
+f_pc_sum$terms[f_pc_sum$rn %in% lifeform] <- "land use" 
+f_pc_sum$terms <- factor(f_pc_sum$terms, levels = c("land use", "species richness", "human footprint", "climate"))
+
+extra <-c("Predominant_habitat", "raunk_lf")
+f_pc_sum$rn <- gsub(paste(extra, collapse="|"),"", f_pc_sum$rn)
+f_pc_sum$rn <- gsub("Intercept","Primary forest", f_pc_sum$rn)
+
+## transforamation where all life forms are compared to relevant reference level 
+f_pc_sum$eff_sz <- f_pc_sum$Estimate
+f_pc_sum$eff_sz[2:13] <- f_pc_sum$eff_sz[2:13]+f_pc_sum$Estimate[1]
+f_pc_sum$eff_sz[20:27] <- f_pc_sum$eff_sz[20:27]+f_pc_sum$eff_sz[10]+f_pc_sum$Estimate[2:9]
+f_pc_sum$eff_sz[28:35] <- f_pc_sum$eff_sz[28:35]+f_pc_sum$eff_sz[11]+f_pc_sum$Estimate[2:9]
+f_pc_sum$eff_sz[36:43] <- f_pc_sum$eff_sz[36:43]+f_pc_sum$eff_sz[12]+f_pc_sum$Estimate[2:9]
+f_pc_sum$eff_sz[44:51] <- f_pc_sum$eff_sz[44:51]+f_pc_sum$eff_sz[13]+f_pc_sum$Estimate[2:9]
+f_pc_sum$eff_sz[52:55] <- f_pc_sum$eff_sz[52:55]+f_pc_sum$eff_sz[15]
+f_pc_sum$eff_sz[56:59] <- f_pc_sum$eff_sz[56:59]+f_pc_sum$eff_sz[17]
+f_pc_sum$eff_sz[60:63] <- f_pc_sum$eff_sz[60:63]+f_pc_sum$eff_sz[16]
+f_pc_sum$eff_sz[64:67] <- f_pc_sum$eff_sz[64:67]+f_pc_sum$eff_sz[19]
+f_pc_sum$eff_sz[68:71] <- f_pc_sum$eff_sz[68:71]+f_pc_sum$eff_sz[18]
+f_pc_sum$eff_sz[72:75] <- f_pc_sum$eff_sz[72:75]+f_pc_sum$eff_sz[14]
+
+## reorder terms for plotting
+f_pc_sum$rn <- factor(f_pc_sum$rn)
+f_pc_sum <- f_pc_sum[order(-f_pc_sum$eff_sz),]
+names(f_pc_sum)[names(f_pc_sum) == 'Std. Error'] <- 'Std.Error'
+
+f_pc_sum$landuse <- 0
+for (i in unique(levels(mydata$Predominant_habitat))){
+  f_pc_sum$landuse[grep(i, f_pc_sum$rn)] <- i }
+  f_pc_sum$landuse[grep("(indeterminate age)", f_pc_sum$rn)] <- "Secondary vegetation (indeterminate age)"
+  
+lifeform <- c("chamaephyte", "cryptophyte", "hemicryptophyte", "phanerophyte", "therophyte")
+for (i in lifeform){
+  f_pc_sum$landuse[f_pc_sum$rn == i] <- "Primary forest"
+}
+
+f_pc_sum$raunk_lf <- 0
+for (i in unique(levels(mydata$raunk_lf))){
+  f_pc_sum$raunk_lf[grep(i, f_pc_sum$rn)] <- i }
+  f_pc_sum$raunk_lf[grep("hemicryptophyte", f_pc_sum$rn)] <- "hemicryptophyte"
+f_pc_sum$raunk_lf[f_pc_sum$raunk_lf == 0] <- "phanerophyte"
+
+f_pc_sum$clim <- 0
+covars <- c("humanfootprint_value", "map", "map_var", "Species_richness", "mat", 
+            "mat_var")
+for (i in covars){
+  f_pc_sum$clim[grep(i, f_pc_sum$rn)] <- i }
+  f_pc_sum$clim[grep("map_var", f_pc_sum$rn)] <- "map_var"
+  f_pc_sum$clim[grep("mat_var", f_pc_sum$rn)] <- "mat_var"
+
+f_pc_sum$raunk_lf <- factor(f_pc_sum$raunk_lf , 
+                      levels = c("phanerophyte","chamaephyte", "hemicryptophyte", "cryptophyte", 
+                                 "therophyte"))
+f_pc_sum$landuse <- factor(f_pc_sum$landuse, 
+                      levels = c("Primary forest", "Primary non-forest", "Young secondary vegetation", "Intermediate secondary vegetation", 
+                                 "Secondary vegetation (indeterminate age)", "Plantation forest", "Pasture", "Cropland", "Urban"))
+f_pc_sum <- f_pc_sum[order(-f_pc_sum$raunk_lf, f_pc_sum$landuse),]
+```
+
+
+```{r wec int a handle labling and tidy format pc, eval=FALSE, include=FALSE}
+f_mod_a <- readRDS("f_pc_wec_int_maximal_gauss_logit_nesting_no_U_T.rds")
+f_pc_sum_a <- as.data.frame(summary(f_mod_a)[["coefficients"]])
+f_pc_sum_a <- setDT(f_pc_sum_a, keep.rownames = TRUE)[]
+
+## adding a new column f_pc_sum_a that codes for if a term is landuse, lifeform or other
+f_pc_sum_a$terms <- as.character(0)
+
+## Handling long term-names
+landuse <- c("Predominant_habitat.wec", "hab_raunk_interactionx1")
+f_pc_sum_a$terms[grep(paste(landuse, collapse = "|"), f_pc_sum_a$rn)] <- "land use"
+clim <- c("mat_var","map", "map_var", "mat")
+f_pc_sum_a$terms[grep(paste(clim, collapse="|"), f_pc_sum_a$rn)] <- "climate" 
+spp <- c("Species_richness", "spp")
+f_pc_sum_a$terms[grep(paste(spp, collapse = "|"), f_pc_sum_a$rn)] <- "species richness"
+
+## transforamation where all life forms are compared to relevant reference level 
+## wec_int calculation
+f_pc_sum_a$eff_sz <- f_pc_sum_a$Estimate
+f_pc_sum_a$eff_sz[2:13] <- f_pc_sum_a$eff_sz[2:13]+f_pc_sum_a$Estimate[1]
+f_pc_sum_a$eff_sz[14:21] <- f_pc_sum_a$eff_sz[14:21]+f_pc_sum_a$eff_sz[10]+f_pc_sum_a$Estimate[2:9]
+f_pc_sum_a$eff_sz[22:29] <- f_pc_sum_a$eff_sz[22:29]+f_pc_sum_a$eff_sz[11]+f_pc_sum_a$Estimate[2:9]
+f_pc_sum_a$eff_sz[30:37] <- f_pc_sum_a$eff_sz[30:37]+f_pc_sum_a$eff_sz[12]+f_pc_sum_a$Estimate[2:9]
+f_pc_sum_a$eff_sz[38:45] <- f_pc_sum_a$eff_sz[38:45]+f_pc_sum_a$eff_sz[13]+f_pc_sum_a$Estimate[2:9]
+f_pc_sum_a$eff_sz[51:54] <- f_pc_sum_a$eff_sz[51:54]+f_pc_sum_a$eff_sz[46]
+f_pc_sum_a$eff_sz[55:58] <- f_pc_sum_a$eff_sz[55:58]+f_pc_sum_a$eff_sz[47]
+f_pc_sum_a$eff_sz[59:62] <- f_pc_sum_a$eff_sz[59:62]+f_pc_sum_a$eff_sz[48]
+f_pc_sum_a$eff_sz[63:66] <- f_pc_sum_a$eff_sz[63:66]+f_pc_sum_a$eff_sz[49]
+f_pc_sum_a$eff_sz[67:70] <- f_pc_sum_a$eff_sz[67:70]+f_pc_sum_a$eff_sz[50]
+
+ # x <- ModelDF[ModelDF$map < 0.2 & ModelDF$map > -0.2 |
+ #               ModelDF$mat < 0.2 & ModelDF$mat > -0.2 |
+ #               ModelDF$map_var < 0.2 & ModelDF$map_var > -0.2 |
+ #               ModelDF$mat_var < 0.2 & ModelDF$mat_var > -0.2 |
+ #               ModelDF$Species_richness < 0.2 & ModelDF$Species_richness > -0.2,]
+# x <- ModelDF[ModelDF$map < 0.1 & ModelDF$map > -0.1,]
+# mean(x$pres_abs)
+## so the sample mean WHEN CONTINUOUS VARIABLES ARE ZERO
+
+names(f_pc_sum_a)[names(f_pc_sum_a) == 'Std. Error'] <- 'Std.Error'
+f_pc_sum_a$ci <- f_pc_sum_a$`Std.Error`*qnorm(.95)
+f_pc_sum_a$landuse <- 0
+for (i in unique(levels(mydata$Predominant_habitat))){
+  f_pc_sum_a$landuse[grep(i, f_pc_sum_a$rn)] <- i }
+  f_pc_sum_a$landuse[grep("(indeterminate age)", f_pc_sum_a$rn)] <- "Secondary vegetation (indeterminate age)"
+
+f_pc_sum_a$raunk_lf <- 0
+for (i in unique(levels(mydata$raunk_lf))){
+  f_pc_sum_a$raunk_lf[grep(i, f_pc_sum_a$rn)] <- i }
+  f_pc_sum_a$raunk_lf[grep("hemicryptophyte", f_pc_sum_a$rn)] <- "hemicryptophyte"
+
+f_pc_sum_a$clim <- 0
+covars <- c("map", "map_var", "Species_richness", "mat", "spp",
+            "mat_var")
+for (i in covars){
+  f_pc_sum_a$clim[grep(i, f_pc_sum_a$rn)] <- i }
+  f_pc_sum_a$clim[grep("map_var", f_pc_sum_a$rn)] <- "map_var"
+  f_pc_sum_a$clim[grep("mat_var", f_pc_sum_a$rn)] <- "mat_var"
+
+f_pc_sum_a$clim[f_pc_sum_a$terms== "species richness"] <- "species richness"
+
+f_pc_sum_a$raunk_lf <- factor(f_pc_sum_a$raunk_lf , 
+                      levels = c("phanerophyte","chamaephyte", "hemicryptophyte", "cryptophyte", 
+                                 "therophyte"))
+f_pc_sum_a$landuse <- factor(f_pc_sum_a$landuse, 
+                      levels = c("Primary forest", "Primary non-forest", "Young secondary vegetation", "Intermediate secondary vegetation", 
+                                 "Secondary vegetation (indeterminate age)", "Plantation forest", "Pasture", "Cropland", "Urban"))
+f_pc_sum_a <- f_pc_sum_a[order(-f_pc_sum_a$raunk_lf, f_pc_sum_a$landuse),]
+
+```
+
+```{r wec int b handle labling and tidy format pc, eval=FALSE, include=FALSE}
+f_mod_b <- readRDS("f_pc_wec_int_maximal_gauss_logit_nesting_no_PF_P.rds")
+f_pc_sum_b <- as.data.frame(summary(f_mod_b)[["coefficients"]])
+f_pc_sum_b <- setDT(f_pc_sum_b, keep.rownames = TRUE)[]
+
+## adding a new column f_pc_sum_b that codes for if a term is landuse, lifeform or other
+f_pc_sum_b$terms <- as.character(0)
+## Handling long term-names
+landuse <- c("Predominant_habitat.wec", "hab_raunk_interactionx1")
+f_pc_sum_b$terms[grep(paste(landuse, collapse = "|"), f_pc_sum_b$rn)] <- "land use"
+clim <- c("mat_var","map", "map_var", "mat")
+f_pc_sum_b$terms[grep(paste(clim, collapse="|"), f_pc_sum_b$rn)] <- "climate" 
+spp <- c("Species_richness", "spp")
+f_pc_sum_b$terms[grep(paste(spp, collapse = "|"), f_pc_sum_b$rn)] <- "species richness"
+
+## transforamation where all life forms are compared to relevant reference level 
+## wec_int calculation
+f_pc_sum_b$eff_sz <- f_pc_sum_b$Estimate
+f_pc_sum_b$eff_sz[2:13] <- f_pc_sum_b$eff_sz[2:13]+f_pc_sum_b$Estimate[1]
+f_pc_sum_b$eff_sz[14:21] <- f_pc_sum_b$eff_sz[14:21]+f_pc_sum_b$eff_sz[10]+f_pc_sum_b$Estimate[2:9]
+f_pc_sum_b$eff_sz[22:29] <- f_pc_sum_b$eff_sz[22:29]+f_pc_sum_b$eff_sz[11]+f_pc_sum_b$Estimate[2:9]
+f_pc_sum_b$eff_sz[30:37] <- f_pc_sum_b$eff_sz[30:37]+f_pc_sum_b$eff_sz[12]+f_pc_sum_b$Estimate[2:9]
+f_pc_sum_b$eff_sz[38:45] <- f_pc_sum_b$eff_sz[38:45]+f_pc_sum_b$eff_sz[13]+f_pc_sum_b$Estimate[2:9]
+f_pc_sum_b$eff_sz[51:54] <- f_pc_sum_b$eff_sz[51:54]+f_pc_sum_b$eff_sz[46]
+f_pc_sum_b$eff_sz[55:58] <- f_pc_sum_b$eff_sz[55:58]+f_pc_sum_b$eff_sz[47]
+f_pc_sum_b$eff_sz[59:62] <- f_pc_sum_b$eff_sz[59:62]+f_pc_sum_b$eff_sz[48]
+f_pc_sum_b$eff_sz[63:66] <- f_pc_sum_b$eff_sz[63:66]+f_pc_sum_b$eff_sz[49]
+f_pc_sum_b$eff_sz[67:70] <- f_pc_sum_b$eff_sz[67:70]+f_pc_sum_b$eff_sz[50]
+
+names(f_pc_sum_b)[names(f_pc_sum_b) == 'Std. Error'] <- 'Std.Error'
+f_pc_sum_b$ci <- f_pc_sum_b$`Std.Error`*qnorm(.95)
+f_pc_sum_b$landuse <- 0
+for (i in unique(levels(mydata$Predominant_habitat))){
+  f_pc_sum_b$landuse[grep(i, f_pc_sum_b$rn)] <- i }
+  f_pc_sum_b$landuse[grep("(indeterminate age)", f_pc_sum_b$rn)] <- "Secondary vegetation (indeterminate age)"
+
+f_pc_sum_b$raunk_lf <- 0
+for (i in unique(levels(mydata$raunk_lf))){
+  f_pc_sum_b$raunk_lf[grep(i, f_pc_sum_b$rn)] <- i }
+  f_pc_sum_b$raunk_lf[grep("hemicryptophyte", f_pc_sum_b$rn)] <- "hemicryptophyte"
+
+f_pc_sum_b$clim <- 0
+covars <- c("map", "map_var", "Species_richness", "mat", "spp",
+            "mat_var")
+for (i in covars){
+  f_pc_sum_b$clim[grep(i, f_pc_sum_b$rn)] <- i }
+  f_pc_sum_b$clim[grep("map_var", f_pc_sum_b$rn)] <- "map_var"
+  f_pc_sum_b$clim[grep("mat_var", f_pc_sum_b$rn)] <- "mat_var"
+
+f_pc_sum_b$clim[f_pc_sum_b$terms== "species richness"] <- "species richness"
+
+f_pc_sum_b$raunk_lf <- factor(f_pc_sum_b$raunk_lf , 
+                      levels = c("phanerophyte","chamaephyte", "hemicryptophyte", "cryptophyte", 
+                                 "therophyte"))
+f_pc_sum_b$landuse <- factor(f_pc_sum_b$landuse, 
+                      levels = c("Primary forest", "Primary non-forest", "Young secondary vegetation", "Intermediate secondary vegetation", 
+                                 "Secondary vegetation (indeterminate age)", "Plantation forest", "Pasture", "Cropland", "Urban"))
+f_pc_sum_b <- f_pc_sum_b[order(-f_pc_sum_b$raunk_lf, f_pc_sum_b$landuse),]
+
+```
+
+```{r wec int c handle labling and tidy format pc, eval=FALSE, include=FALSE}
+f_mod_c <- readRDS("f_pc_wec_int_maximal_gauss_logit_nesting_no_P_C.rds")
+f_pc_sum_c <- as.data.frame(summary(f_mod_c)[["coefficients"]])
+f_pc_sum_c <- setDT(f_pc_sum_c, keep.rownames = TRUE)[]
+
+## adding a new column f_pc_sum_c that codes for if a term is landuse, lifeform or other
+f_pc_sum_c$terms <- as.character(0)
+## Handling long term-names
+landuse <- c("Predominant_habitat.wec", "hab_raunk_interactionx1")
+f_pc_sum_c$terms[grep(paste(landuse, collapse = "|"), f_pc_sum_c$rn)] <- "land use"
+clim <- c("mat_var","map", "map_var", "mat")
+f_pc_sum_c$terms[grep(paste(clim, collapse="|"), f_pc_sum_c$rn)] <- "climate" 
+spp <- c("Species_richness", "spp")
+f_pc_sum_c$terms[grep(paste(spp, collapse = "|"), f_pc_sum_c$rn)] <- "species richness"
+
+## transforamation where all life forms are compared to relevant reference level 
+## wec_int calculation
+f_pc_sum_c$eff_sz <- f_pc_sum_c$Estimate
+f_pc_sum_c$eff_sz[2:13] <- f_pc_sum_c$eff_sz[2:13]+f_pc_sum_c$Estimate[1]
+f_pc_sum_c$eff_sz[14:21] <- f_pc_sum_c$eff_sz[14:21]+f_pc_sum_c$eff_sz[10]+f_pc_sum_c$Estimate[2:9]
+f_pc_sum_c$eff_sz[22:29] <- f_pc_sum_c$eff_sz[22:29]+f_pc_sum_c$eff_sz[11]+f_pc_sum_c$Estimate[2:9]
+f_pc_sum_c$eff_sz[30:37] <- f_pc_sum_c$eff_sz[30:37]+f_pc_sum_c$eff_sz[12]+f_pc_sum_c$Estimate[2:9]
+f_pc_sum_c$eff_sz[38:45] <- f_pc_sum_c$eff_sz[38:45]+f_pc_sum_c$eff_sz[13]+f_pc_sum_c$Estimate[2:9]
+f_pc_sum_c$eff_sz[51:54] <- f_pc_sum_c$eff_sz[51:54]+f_pc_sum_c$eff_sz[46]
+f_pc_sum_c$eff_sz[55:58] <- f_pc_sum_c$eff_sz[55:58]+f_pc_sum_c$eff_sz[47]
+f_pc_sum_c$eff_sz[59:62] <- f_pc_sum_c$eff_sz[59:62]+f_pc_sum_c$eff_sz[48]
+f_pc_sum_c$eff_sz[63:66] <- f_pc_sum_c$eff_sz[63:66]+f_pc_sum_c$eff_sz[49]
+f_pc_sum_c$eff_sz[67:70] <- f_pc_sum_c$eff_sz[67:70]+f_pc_sum_c$eff_sz[50]
+
+names(f_pc_sum_c)[names(f_pc_sum_c) == 'Std. Error'] <- 'Std.Error'
+f_pc_sum_c$ci <- f_pc_sum_c$`Std.Error`*qnorm(.95)
+f_pc_sum_c$landuse <- 0
+for (i in unique(levels(mydata$Predominant_habitat))){
+  f_pc_sum_c$landuse[grep(i, f_pc_sum_c$rn)] <- i }
+  f_pc_sum_c$landuse[grep("(indeterminate age)", f_pc_sum_c$rn)] <- "Secondary vegetation (indeterminate age)"
+
+f_pc_sum_c$raunk_lf <- 0
+for (i in unique(levels(mydata$raunk_lf))){
+  f_pc_sum_c$raunk_lf[grep(i, f_pc_sum_c$rn)] <- i }
+  f_pc_sum_c$raunk_lf[grep("hemicryptophyte", f_pc_sum_c$rn)] <- "hemicryptophyte"
+
+f_pc_sum_c$clim <- 0
+covars <- c("map", "map_var", "Species_richness", "mat", "spp",
+            "mat_var")
+for (i in covars){
+  f_pc_sum_c$clim[grep(i, f_pc_sum_c$rn)] <- i }
+  f_pc_sum_c$clim[grep("map_var", f_pc_sum_c$rn)] <- "map_var"
+  f_pc_sum_c$clim[grep("mat_var", f_pc_sum_c$rn)] <- "mat_var"
+
+f_pc_sum_c$clim[f_pc_sum_c$terms== "species richness"] <- "species richness"
+
+f_pc_sum_c$raunk_lf <- factor(f_pc_sum_c$raunk_lf , 
+                      levels = c("phanerophyte","chamaephyte", "hemicryptophyte", "cryptophyte", 
+                                 "therophyte"))
+f_pc_sum_c$landuse <- factor(f_pc_sum_c$landuse, 
+                      levels = c("Primary forest", "Primary non-forest", "Young secondary vegetation", "Intermediate secondary vegetation", 
+                                 "Secondary vegetation (indeterminate age)", "Plantation forest", "Pasture", "Cropland", "Urban"))
+f_pc_sum_c <- f_pc_sum_c[order(-f_pc_sum_c$raunk_lf, f_pc_sum_c$landuse),]
+
+```
+
+```{r, eval=FALSE, include=FALSE}
+f_pc_sum <- unique(rbind(f_pc_sum_a, f_pc_sum_b, f_pc_sum_c))
+f_pc_sum$Estimate <- round(f_pc_sum$Estimate, 4)
+f_pc_sum$Std.Error <- round(f_pc_sum$Std.Error, 4)
+f_pc_sum$`t value` <- round(f_pc_sum$`t value`, 4)
+f_pc_sum$eff_sz <- round(f_pc_sum$eff_sz, 4)
+f_pc_sum$ci <- round(f_pc_sum$ci, 4)
+f_pc_sum <- unique(f_pc_sum)
+```
+
+```{r, eval=FALSE, include=FALSE}
+## now get average values, for cells where rounding to 4 decimal places did not create the exact same values
+## average over the same rns
+## but for now cheat and drop to 3
+f_pc_sum$Estimate <- round(f_pc_sum$Estimate, 2)
+f_pc_sum$Std.Error <- round(f_pc_sum$Std.Error, 2)
+f_pc_sum$`t value` <- round(f_pc_sum$`t value`, 2)
+f_pc_sum$eff_sz <- round(f_pc_sum$eff_sz, 2)
+f_pc_sum$ci <- round(f_pc_sum$ci, 2)
+f_pc_sum <- unique(f_pc_sum)
+
+```
+
+make the column for the histogram
+```{r eval=FALSE, include=FALSE}
+for(i in levels(f_pc_sum$landuse)){
+f_pc_sum$luN[f_pc_sum$landuse == i] <- 
+  length(mydata$Predominant_habitat[mydata$Predominant_habitat == i])}
+
+for(i in levels(f_pc_sum$raunk_lf)){
+f_pc_sum$raunkN[f_pc_sum$raunk_lf == i] <- 
+  length(mydata$raunk_lf[mydata$raunk_lf == i])}
+```
+
+
+```{r}
+#saveRDS(f_pc_sum, "f_pc_sum.rds")
+f_pc_sum <- readRDS("f_pc_sum.rds")
+f_pc_sum <- f_pc_sum[order(-f_pc_sum$raunk_lf, f_pc_sum$landuse),]
+f_pc_sum$land_av <- 0
+f_pc_sum$land_av[which(is.na(f_pc_sum$raunk_lf) & !is.na(f_pc_sum$landuse))] <- 1
+
+```
+

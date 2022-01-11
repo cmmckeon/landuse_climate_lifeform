@@ -1,0 +1,432 @@
+---
+title: "LF_11_sup_tables"
+author: "Caroline McKeon"
+date: "10/13/2021"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r echo=FALSE}
+library(tidyverse)
+library(broom.mixed)
+library(kableExtra)
+library(ggplot2)
+library(sjPlot) ## for the set_theme function
+library(viridis)
+library(ggpubr)
+library(ggeffects)
+library(gtools)
+library(ggridges)
+library(papeR)
+library(kableExtra)
+knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message = FALSE) 
+
+library(DHARMa)
+library(glmmTMB)
+library(lme4)
+library(data.table)
+library(ggplot2)
+library(sjPlot) ## for the set_theme function
+library(viridis)
+library(ggpubr)
+library(ggeffects)
+library(gtools)
+library(ggridges)
+library(papeR)
+library(kableExtra)
+library(tidyverse)
+library(cowplot)
+knitr::opts_chunk$set(
+	echo = FALSE,
+	message = FALSE,
+	fig.height = 9.7,
+	fig.width = 16
+)
+knitr::opts_chunk$set(fig.width=16, fig.height=9.7) 
+```
+
+## read in data
+```{r}
+# read in oc model
+f_oc_sum <- readRDS("f_oc_sum.rds")
+f_oc_sum$land_av <- NA
+f_oc_sum$land_av[which(is.na(f_oc_sum$raunk_lf) & !is.na(f_oc_sum$landuse))] <- 1
+
+f_oc_sum$landuse <-gsub(" vegetation", "", f_oc_sum$landuse, ignore.case = TRUE)
+f_oc_sum$landuse <- as.character(f_oc_sum$landuse)
+f_oc_sum$landuse[f_oc_sum$landuse == "Secondary (indeterminate age)"] <- "unknown Secondary"
+f_oc_sum$landuse <- factor(f_oc_sum$landuse)
+
+## Yvonne's ordering
+f_oc_sum$landuse <- factor(f_oc_sum$landuse, 
+                      levels = c("Primary forest", "unknown Secondary",  "Mature secondary", 
+                                 "Intermediate secondary", "Young secondary",
+                                 "Plantation forest", "Primary non-forest", "Pasture", "Cropland", "Urban"))
+
+## create column for grey bars
+f_oc_sum$cat <- as.numeric(f_oc_sum$landuse)
+f_oc_sum$rep[f_oc_sum$landuse %in% c("Primary forest",  "Mature secondary", "Young secondary",
+                                     "Primary non-forest", "Cropland")] <- "white"
+f_oc_sum$rep[f_oc_sum$landuse %in% c("unknown Secondary","Intermediate secondary",
+                                     "Plantation forest", "Pasture", "Urban")] <- "grey"
+```
+
+```{r, include=FALSE}
+# read in pc model
+f_pc_sum <- readRDS("f_pc_sum.rds")
+f_pc_sum$landuse <- as.character(f_pc_sum$landuse)
+f_pc_sum$landuse[f_pc_sum$clim == "species richness"] <- "Mature secondary"
+f_pc_sum <- f_pc_sum[order(-f_pc_sum$raunk_lf, f_pc_sum$landuse),]
+f_pc_sum$land_av <- 0
+f_pc_sum$land_av[which(is.na(f_pc_sum$raunk_lf) & !is.na(f_pc_sum$landuse))] <- 1
+
+f_pc_sum$landuse <-gsub(" vegetation", "", f_pc_sum$landuse, ignore.case = TRUE)
+f_pc_sum$landuse <- as.character(f_pc_sum$landuse)
+f_pc_sum$landuse[f_pc_sum$landuse == "Secondary (indeterminate age)"] <- "unknown Secondary"
+f_pc_sum$landuse <- factor(f_pc_sum$landuse)
+
+f_pc_sum$landuse <- factor(f_pc_sum$landuse)
+## Yvonne's ordering
+f_pc_sum$landuse <- factor(f_pc_sum$landuse, 
+                      levels = c("Primary forest", "unknown Secondary", "Mature secondary",
+                                 "Intermediate secondary", "Young secondary",
+                                 "Plantation forest", "Primary non-forest", "Pasture", "Cropland", "Urban"))
+f_pc_sum$cat <- as.numeric(f_pc_sum$landuse)
+f_pc_sum$rep[f_pc_sum$landuse %in% c("Primary forest", "Mature secondary", "Young secondary",
+                                     "Primary non-forest", "Cropland")] <- "white"
+f_pc_sum$rep[f_pc_sum$landuse %in% c("unknown Secondary","Intermediate secondary",
+                                     "Plantation forest", "Pasture", "Urban")] <- "grey"
+
+```
+
+```{r}
+## read in model data
+if(!exists("ModelDF")) {
+  if(file.exists("Data_ModelDF.rds")) {
+    try(ModelDF <- readRDS("Data_ModelDF.rds"))
+  } else warning("ModelDF does not exist in this directory")
+}
+
+ModelDF$Predominant_habitat <-gsub(" vegetation", "", ModelDF$Predominant_habitat, ignore.case = TRUE)
+ModelDF$Predominant_habitat <- as.character(ModelDF$Predominant_habitat)
+ModelDF$Predominant_habitat[ModelDF$Predominant_habitat == "Secondary (indeterminate age)"] <- "unknown Secondary"
+ModelDF$Predominant_habitat <- factor(ModelDF$Predominant_habitat)
+
+## Yvonne's ordering
+ModelDF$Predominant_habitat <- factor(ModelDF$Predominant_habitat, 
+                      levels = c("Primary forest", "unknown Secondary",  "Mature secondary", 
+                                 "Intermediate secondary", "Young secondary",
+                                 "Plantation forest", "Primary non-forest", "Pasture", "Cropland", "Urban"))
+```
+
+```{r}
+f_oc_sum$'Model terms' <- paste(f_oc_sum$landuse, ":", f_oc_sum$raunk_lf, ":", f_oc_sum$clim)
+nope <- c("\\: 0", " \\: 0", "NA \\: ")
+f_oc_sum$'Model terms' <- gsub(paste(nope, collapse="|"), "", f_oc_sum$'Model terms')
+f_oc_sum$'Model terms' <- gsub(" \\: 0", "", f_oc_sum$'Model terms')
+f_oc_sum$'Model terms'[f_oc_sum$`Model terms` == "0"] <- "Grand Mean"
+
+f_pc_sum$'Model terms' <- paste(f_pc_sum$landuse, ":", f_pc_sum$raunk_lf, ":", f_pc_sum$clim)
+nope <- c("\\: 0", " \\: 0", "NA \\: ")
+f_pc_sum$'Model terms' <- gsub(paste(nope, collapse="|"), "", f_pc_sum$'Model terms')
+f_pc_sum$'Model terms' <- gsub(" \\: 0", "", f_pc_sum$'Model terms')
+f_pc_sum$'Model terms'[f_pc_sum$`Model terms` == "0"] <- "Grand Mean"
+
+```
+
+
+# Table 1. Occurrence model output
+```{r}
+# tables of model outputs
+sum.df <- as_tibble(f_oc_sum[,c(15,2:5)])
+
+sum.df %>% 
+  kable(booktabs = T, caption = "Table 1. Occurrence model output") %>%
+  kable_styling(bootstrap_options = "striped", full_width = T) %>%
+  row_spec(which(sum.df$`z value` < -2), color = "red", background = "white") %>%
+  row_spec(which(sum.df$`z value` >2), color = "blue", background = "white") %>% 
+  kable_styling(font_size = 10)
+
+```
+
+# Table 2. Abundance model output
+```{r}
+sum.df <- as_tibble(f_pc_sum[,c(16,2:4)])
+
+sum.df %>% 
+  kable(booktabs = T, caption = "Table 2. Abundance model outputt") %>%
+  kable_styling(bootstrap_options = "striped", full_width = T) %>%
+  row_spec(which(sum.df$`t value` < -2), color = "red", background = "white") %>%
+  row_spec(which(sum.df$`t value` >2), color = "blue", background = "white") %>% 
+  kable_styling(font_size = 10)
+
+```
+
+# Table 3a. Effect size for Life form Occurrence by Land use
+```{r}
+## effect size tables Occurrence
+oc_eff_lu <- f_oc_sum[which(!is.na(f_oc_sum$landuse) & !is.na(f_oc_sum$raunk_lf))]
+oc_eff_lu$Magnitude <- oc_eff_lu$eff_sz - f_oc_sum$Estimate[f_oc_sum$rn == "(Intercept)"]
+
+oc_eff_lu  <- oc_eff_lu[,c(9:10,16)]
+oc_eff_lu <- oc_eff_lu[order(oc_eff_lu$Magnitude),]
+
+sum.df <- as_tibble(oc_eff_lu)
+sum.df %>% 
+  kable(booktabs = T, caption = "Table 3a. Effect size for Life form Occurrence by Land use") %>%
+  kable_styling(bootstrap_options = "striped", full_width = T) 
+```
+
+# Table 3b. Effect size for Life form Occurrence by Climate
+```{r}
+oc_eff_clim <- f_oc_sum[which(!is.na(f_oc_sum$raunk_lf) & f_oc_sum$clim != 0 & f_oc_sum$clim != "species richness")]
+oc_eff_clim$Magnitude <- oc_eff_clim$eff_sz
+
+oc_eff_clim  <- oc_eff_clim[,c(10:11,16)]
+oc_eff_clim <- oc_eff_clim[order(oc_eff_clim$Magnitude),]
+
+sum.df <- as_tibble(oc_eff_clim)
+sum.df %>% 
+  kable(booktabs = T, caption = "Table 3b. Effect size for Life form Occurrence by Climate") %>%
+  kable_styling(bootstrap_options = "striped", full_width = T) 
+```
+
+## Table 3c. Range within effect sizes
+```{r}
+d <- f_oc_sum[which(!is.na(f_oc_sum$landuse) & !is.na(f_oc_sum$raunk_lf)),]
+d$landuse <- factor(d$landuse)
+for(i in levels(d$landuse)){
+  d$land_range[d$landuse == i] <- max(d$eff_sz[d$landuse == i]) - min(d$eff_sz[d$landuse == i])
+}
+
+d <- unique(d[, c(9,16)])
+d <- d[order(d$land_range),]
+sum.df <- as_tibble(d)
+sum.df %>% 
+  kable(booktabs = T, caption = "Table 3c. Range in Effect size for Life form Occurrence by Land use") %>%
+  kable_styling(bootstrap_options = "striped", full_width = T) 
+
+c <- f_oc_sum[which(!is.na(f_oc_sum$raunk_lf) & f_oc_sum$clim != 0 & f_oc_sum$clim != "species richness")]
+c$clim<- factor(c$clim)
+for(i in levels(c$clim)){
+  c$clim_range[c$clim == i] <- max(c$eff_sz[c$clim == i]) - min(c$eff_sz[c$clim == i])
+}
+
+c <- unique(c[, c(11,16)])
+c <- c[order(c$clim_range),]
+sum.df <- as_tibble(c)
+sum.df %>% 
+  kable(booktabs = T, caption = "Table 3d. Range in Effect sizes for Life form Occurrence by Climate") %>%
+  kable_styling(bootstrap_options = "striped", full_width = T) 
+
+g <- f_oc_sum[which(!is.na(f_oc_sum$landuse) & !is.na(f_oc_sum$raunk_lf)),]
+for(i in levels(g$raunk_lf)){
+  g$raunk_lf_range[g$raunk_lf == i] <- max(g$eff_sz[g$raunk_lf == i]) - min(g$eff_sz[g$raunk_lf == i])
+}
+g <- unique(g[, c(10,16)])
+g <- g[order(g$raunk_lf_range),]
+sum.df <- as_tibble(g)
+sum.df %>% 
+  kable(booktabs = T, caption = "Table 3e. Range in Effect sizes for Life form Occurrence across Land use") %>%
+  kable_styling(bootstrap_options = "striped", full_width = T) 
+```
+
+
+# Table 4a. Magnitude of Effect size for Life form Abundance by Land use
+```{r}
+## effect size tables Abundance
+pc_eff_lu <- f_pc_sum[which(!is.na(f_pc_sum$landuse) & !is.na(f_pc_sum$raunk_lf))]
+pc_eff_lu$Magnitude <- pc_eff_lu$eff_sz - f_pc_sum$Estimate[f_pc_sum$rn == "(Intercept)"]
+
+pc_eff_lu  <- pc_eff_lu[,c(8:9,17)]
+pc_eff_lu <- pc_eff_lu[order(pc_eff_lu$Magnitude),]
+
+sum.df <- as_tibble(pc_eff_lu)
+sum.df %>% 
+  kable(booktabs = T, caption = "Table 4a. Effect size for Life form Abundance by Land use") %>%
+  kable_styling(bootstrap_options = "striped", full_width = T) 
+```
+
+# Table 4b. Magnitude of Effect size for Life form Abundance by Climate
+```{r}
+pc_eff_clim <- f_pc_sum[which(!is.na(f_pc_sum$raunk_lf) & f_pc_sum$clim != 0 & f_pc_sum$clim != "species richness")]
+pc_eff_clim$Magnitude <- pc_eff_clim$eff_sz
+
+pc_eff_clim  <- pc_eff_clim[,c(9:10,17)]
+pc_eff_clim <- pc_eff_clim[order(pc_eff_clim$Magnitude),]
+
+sum.df <- as_tibble(pc_eff_clim)
+sum.df %>% 
+  kable(booktabs = T, caption = "Table 4b. Effect size for Life form Abundance by Climate") %>%
+  kable_styling(bootstrap_options = "striped", full_width = T) 
+```
+
+## Table 4c. Range within effect sizes
+```{r}
+d <- f_pc_sum[which(!is.na(f_pc_sum$landuse) & !is.na(f_pc_sum$raunk_lf)& f_pc_sum$clim != "species richness"),]
+d$landuse <- factor(d$landuse)
+for(i in levels(d$landuse)){
+  d$land_range[d$landuse == i] <- max(d$eff_sz[d$landuse == i]) - min(d$eff_sz[d$landuse == i])
+}
+d <- unique(d[, c(8,17)])
+d <- d[order(d$land_range),]
+
+sum.df <- as_tibble(d)
+sum.df %>% 
+  kable(booktabs = T, caption = "Table 4c. Range in Effect size for Life form Abundance by Land use") %>%
+  kable_styling(bootstrap_options = "striped", full_width = T) 
+
+c <- f_pc_sum[which(!is.na(f_pc_sum$raunk_lf) & f_pc_sum$clim != 0 & f_pc_sum$clim != "species richness")]
+c$clim<- factor(c$clim)
+for(i in levels(c$clim)){
+  c$clim_range[c$clim == i] <- max(c$eff_sz[c$clim == i]) - min(c$eff_sz[c$clim == i])
+}
+c <- unique(c[, c(10,17)])
+c <- c[order(c$clim_range),]
+
+sum.df <- as_tibble(c)
+sum.df %>% 
+  kable(booktabs = T, caption = "Table 4d. Range in Effect sizes for Life form Abundance by Climate") %>%
+  kable_styling(bootstrap_options = "striped", full_width = T) 
+
+g <- f_pc_sum[which(!is.na(f_pc_sum$landuse) & !is.na(f_pc_sum$raunk_lf)& f_pc_sum$clim != "species richness"),]
+for(i in levels(g$raunk_lf)){s
+  g$raunk_lf_range[g$raunk_lf == i] <- max(g$eff_sz[g$raunk_lf == i]) - min(g$eff_sz[g$raunk_lf == i])
+}
+g <- unique(g[, c(9,17)])
+g <- g[order(g$raunk_lf_range),]
+
+sum.df <- as_tibble(g)
+sum.df %>% 
+  kable(booktabs = T, caption = "Table 4e. Range in Effect sizes for Life form Abundance across Land use") %>%
+  kable_styling(bootstrap_options = "striped", full_width = T) 
+```
+
+# Table 5. Summary statistics for climatic variables
+```{r}
+all_clim_ave <- readRDS("all_clim_ave.rds")
+opts <- options(knitr.kable.NA = "")
+sum.df <- as_tibble(all_clim_ave)
+
+sum.df %>% 
+  kable(booktabs = T, caption = "Table 5. Summary statistics for climatic variables") %>%
+  kable_styling(bootstrap_options = "striped", full_width = F) 
+```
+
+# Table 6. Biome averages for climatic variables
+```{r}
+biome <- readRDS("average_biome_clim_vars.rds")
+
+sum.df <- as_tibble(biome[,c(5,1:4)])
+
+sum.df %>% 
+  kable(booktabs = T, caption = "Table 6. Biome averages for climatic variables") %>%
+  kable_styling(bootstrap_options = "striped", full_width = F) 
+```
+
+
+```{r}
+# read in oc model
+f_oc_sum <- readRDS("f_oc_NO_RICH_sum.rds")
+f_oc_sum$land_av <- NA
+f_oc_sum$land_av[which(is.na(f_oc_sum$raunk_lf) & !is.na(f_oc_sum$landuse))] <- 1
+
+f_oc_sum$landuse <-gsub(" vegetation", "", f_oc_sum$landuse, ignore.case = TRUE)
+f_oc_sum$landuse <- as.character(f_oc_sum$landuse)
+f_oc_sum$landuse[f_oc_sum$landuse == "Secondary (indeterminate age)"] <- "unknown Secondary"
+f_oc_sum$landuse <- factor(f_oc_sum$landuse)
+
+## Yvonne's ordering
+f_oc_sum$landuse <- factor(f_oc_sum$landuse, 
+                      levels = c("Primary forest", "unknown Secondary",  "Mature secondary", 
+                                 "Intermediate secondary", "Young secondary",
+                                 "Plantation forest", "Primary non-forest", "Pasture", "Cropland", "Urban"))
+
+## create column for grey bars
+f_oc_sum$cat <- as.numeric(f_oc_sum$landuse)
+f_oc_sum$rep[f_oc_sum$landuse %in% c("Primary forest",  "Mature secondary", "Young secondary",
+                                     "Primary non-forest", "Cropland")] <- "white"
+f_oc_sum$rep[f_oc_sum$landuse %in% c("unknown Secondary","Intermediate secondary",
+                                     "Plantation forest", "Pasture", "Urban")] <- "grey"
+```
+
+```{r, include=FALSE}
+# read in pc model
+f_pc_sum <- readRDS("f_pc_NO_RICH_sum.rds")
+f_pc_sum$landuse <- as.character(f_pc_sum$landuse)
+
+f_pc_sum <- f_pc_sum[order(-f_pc_sum$raunk_lf, f_pc_sum$landuse),]
+f_pc_sum$land_av <- 0
+f_pc_sum$land_av[which(is.na(f_pc_sum$raunk_lf) & !is.na(f_pc_sum$landuse))] <- 1
+
+f_pc_sum$landuse <-gsub(" vegetation", "", f_pc_sum$landuse, ignore.case = TRUE)
+f_pc_sum$landuse <- as.character(f_pc_sum$landuse)
+f_pc_sum$landuse[f_pc_sum$landuse == "Secondary (indeterminate age)"] <- "unknown Secondary"
+f_pc_sum$landuse <- factor(f_pc_sum$landuse)
+
+f_pc_sum$landuse <- factor(f_pc_sum$landuse)
+## Yvonne's ordering
+f_pc_sum$landuse <- factor(f_pc_sum$landuse, 
+                      levels = c("Primary forest", "unknown Secondary", "Mature secondary",
+                                 "Intermediate secondary", "Young secondary",
+                                 "Plantation forest", "Primary non-forest", "Pasture", "Cropland", "Urban"))
+f_pc_sum$cat <- as.numeric(f_pc_sum$landuse)
+f_pc_sum$rep[f_pc_sum$landuse %in% c("Primary forest", "Mature secondary", "Young secondary",
+                                     "Primary non-forest", "Cropland")] <- "white"
+f_pc_sum$rep[f_pc_sum$landuse %in% c("unknown Secondary","Intermediate secondary",
+                                     "Plantation forest", "Pasture", "Urban")] <- "grey"
+
+```
+
+```{r}
+f_oc_sum$'Model terms' <- paste(f_oc_sum$landuse, ":", f_oc_sum$raunk_lf, ":", f_oc_sum$clim)
+nope <- c("\\: 0", " \\: 0", "NA \\: ")
+f_oc_sum$'Model terms' <- gsub(paste(nope, collapse="|"), "", f_oc_sum$'Model terms')
+f_oc_sum$'Model terms' <- gsub(" \\: 0", "", f_oc_sum$'Model terms')
+f_oc_sum$'Model terms'[f_oc_sum$`Model terms` == "0"] <- "Grand Mean"
+
+f_pc_sum$'Model terms' <- paste(f_pc_sum$landuse, ":", f_pc_sum$raunk_lf, ":", f_pc_sum$clim)
+nope <- c("\\: 0", " \\: 0", "NA \\: ")
+f_pc_sum$'Model terms' <- gsub(paste(nope, collapse="|"), "", f_pc_sum$'Model terms')
+f_pc_sum$'Model terms' <- gsub(" \\: 0", "", f_pc_sum$'Model terms')
+f_pc_sum$'Model terms'[f_pc_sum$`Model terms` == "0"] <- "Grand Mean"
+
+```
+
+
+# Table 7a. Occurrence no species richness model output
+```{r}
+# tables of model outputs
+sum.df <- as_tibble(f_oc_sum[,c(16,2:5)])
+
+sum.df %>% 
+  kable(booktabs = T, caption = "Table 1. Occurrence model output") %>%
+  kable_styling(bootstrap_options = "striped", full_width = T) %>%
+  row_spec(which(sum.df$`z value` < -2), color = "red", background = "white") %>%
+  row_spec(which(sum.df$`z value` >2), color = "blue", background = "white") %>% 
+  kable_styling(font_size = 10)
+
+```
+
+# Table 7b. Abundance no species richness model output
+```{r}
+sum.df <- as_tibble(f_pc_sum[,c(16,2:4)])
+
+sum.df %>% 
+  kable(booktabs = T, caption = "Table 2. Abundance model outputt") %>%
+  kable_styling(bootstrap_options = "striped", full_width = T) %>%
+  row_spec(which(sum.df$`t value` < -2), color = "red", background = "white") %>%
+  row_spec(which(sum.df$`t value` >2), color = "blue", background = "white") %>% 
+  kable_styling(font_size = 10)
+
+```
+
+
+
+
+
+
+
+
+
