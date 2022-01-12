@@ -1,5 +1,5 @@
 #' ---
-#' title: "LF_04c_NO_RICH_frequentist_percent_cover.R"
+#' title: "LF_04a_NO_RICH_frequentist_percent_cover.R"
 # author: "Caroline McKeon"
 # date: "01/07/2020"
 
@@ -52,8 +52,8 @@ mydata$animal <- mydata$Best_guess_binomial
 
 ## get taxomonic data for all species
 if(!exists("PR_pc")) {
-  if(file.exists("Data_PR_f_pc.rds")) {
-    try(PR_pc <- readRDS("Data_PR_f_pc.rds"))
+  if(file.exists("Data_03a_PR_f_pc.rds")) {
+    try(PR_pc <- readRDS("Data_03a_PR_f_pc.rds"))
   } else try(
     {PR <- readRDS("Data_PR_plantDiversityCorr.rds")
     levels(PR$Best_guess_binomial) <- gsub(" ", "_", levels(PR$Best_guess_binomial))
@@ -110,7 +110,6 @@ mydata$mat_var_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$mat
 print("start running model a")
 
 pc_wec_NO_RICH_int_maximal_gauss_logit_nesting_no_U_T <- lmer(response ~ Predominant_habitat.wec + raunk_lf.wec + hab_raunk_interaction +
-                                                        # humanfootprint_value +
                                                         map +
                                                         map_var +
                                                         mat +
@@ -119,7 +118,6 @@ pc_wec_NO_RICH_int_maximal_gauss_logit_nesting_no_U_T <- lmer(response ~ Predomi
                                                         map_var_raunk_interaction +
                                                         mat_raunk_interaction +
                                                         mat_var_raunk_interaction +
-                                                        # humanfootprint_value:raunk_lf +
                                                         (1|Best_guess_binomial) +
                                                         (1|SS) +
                                                         (1|Class/Order/Family/Genus),
@@ -150,7 +148,6 @@ mydata$mat_var_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$mat
 print("start running model b")
 
 pc_wec_NO_RICH_int_maximal_gauss_logit_nesting_no_PF_P <- lmer(response ~ Predominant_habitat.wec + raunk_lf.wec + hab_raunk_interaction +
-                                                         # humanfootprint_value +
                                                          map +
                                                          map_var +
                                                          mat +
@@ -159,7 +156,6 @@ pc_wec_NO_RICH_int_maximal_gauss_logit_nesting_no_PF_P <- lmer(response ~ Predom
                                                          map_var_raunk_interaction +
                                                          mat_raunk_interaction +
                                                          mat_var_raunk_interaction +
-                                                         # humanfootprint_value:raunk_lf +
                                                          (1|Best_guess_binomial) +
                                                          (1|SS) +
                                                          (1|Class/Order/Family/Genus),
@@ -190,7 +186,6 @@ mydata$mat_var_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$mat
 print("start running model c")
 
 pc_wec_NO_RICH_int_maximal_gauss_logit_nesting_no_P_C <- lmer(response ~ Predominant_habitat.wec + raunk_lf.wec + hab_raunk_interaction +
-                                                        # humanfootprint_value +
                                                         map +
                                                         map_var +
                                                         mat +
@@ -199,7 +194,6 @@ pc_wec_NO_RICH_int_maximal_gauss_logit_nesting_no_P_C <- lmer(response ~ Predomi
                                                         map_var_raunk_interaction +
                                                         mat_raunk_interaction +
                                                         mat_var_raunk_interaction +
-                                                        # humanfootprint_value:raunk_lf +
                                                         (1|Best_guess_binomial) +
                                                         (1|SS) +
                                                         (1|Class/Order/Family/Genus),

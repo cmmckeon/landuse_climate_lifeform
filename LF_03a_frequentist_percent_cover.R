@@ -10,14 +10,9 @@ setwd("~/PREDICTS")
 ## Create model dataframe
 #source("LF_01_data_handling.R")
 
-## Create phylogeny 
-#source("LF_01b_phylogeny.R")
-
 
 ## Setup---------------------------------------------------------------------------------------------------------------
-library(tidyverse)
 library(lme4)
-#library(DHARMa)
 library(optimx) 
 library(glmmTMB)
 library(wec)
@@ -52,14 +47,15 @@ mydata$animal <- mydata$Best_guess_binomial
 
 ## get taxomonic data for all species
 if(!exists("PR_pc")) {
-  if(file.exists("Data_PR_f_pc.rds")) {
-    try(PR_pc <- readRDS("Data_PR_f_pc.rds"))
+  if(file.exists("Data_03a_PR_f_pc.rds")) {
+    try(PR_pc <- readRDS("Data_03a_PR_f_pc.rds"))
   } else try(
     {PR <- readRDS("Data_PR_plantDiversityCorr.rds")
     levels(PR$Best_guess_binomial) <- gsub(" ", "_", levels(PR$Best_guess_binomial))
     PR <- PR[PR$Best_guess_binomial %in% mydata$Best_guess_binomial,]
     PR_pc <- unique(PR[, which(names(PR) %in% c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus",
-                                                         "Best_guess_binomial"))])})
+                                                         "Best_guess_binomial"))])
+    saveRDS(PR_pc,"Data_03a_PR_f_pc.rds")})
 }
 
 mydata <- droplevels(merge(mydata, PR_pc, by = "Best_guess_binomial",all.x = TRUE)) 
@@ -133,7 +129,6 @@ mydata$spp_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$Species
 print("start running model a")
 
 pc_wec_int_maximal_gauss_logit_nesting_no_U_T <- lmer(response ~ Predominant_habitat.wec + raunk_lf.wec + hab_raunk_interaction +
-                            # humanfootprint_value +
                              Species_richness +
                              map +
                              map_var +
@@ -144,7 +139,6 @@ pc_wec_int_maximal_gauss_logit_nesting_no_U_T <- lmer(response ~ Predominant_hab
                              map_var_raunk_interaction +
                              mat_raunk_interaction +
                              mat_var_raunk_interaction +
-                            # humanfootprint_value:raunk_lf +
                              (1|Best_guess_binomial) +
                              (1|SS) +
                              (1|Class/Order/Family/Genus),
@@ -176,7 +170,6 @@ mydata$spp_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$Species
 print("start running model b")
 
 pc_wec_int_maximal_gauss_logit_nesting_no_PF_P <- lmer(response ~ Predominant_habitat.wec + raunk_lf.wec + hab_raunk_interaction +
-                                                 # humanfootprint_value +
                                                  Species_richness +
                                                  map +
                                                  map_var +
@@ -187,7 +180,6 @@ pc_wec_int_maximal_gauss_logit_nesting_no_PF_P <- lmer(response ~ Predominant_ha
                                                  map_var_raunk_interaction +
                                                  mat_raunk_interaction +
                                                  mat_var_raunk_interaction +
-                                                 # humanfootprint_value:raunk_lf +
                                                  (1|Best_guess_binomial) +
                                                  (1|SS) +
                                                  (1|Class/Order/Family/Genus),
@@ -219,7 +211,6 @@ mydata$spp_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$Species
 print("start running model c")
 
 pc_wec_int_maximal_gauss_logit_nesting_no_P_C <- lmer(response ~ Predominant_habitat.wec + raunk_lf.wec + hab_raunk_interaction +
-                                                         # humanfootprint_value +
                                                          Species_richness +
                                                          map +
                                                          map_var +
@@ -230,7 +221,6 @@ pc_wec_int_maximal_gauss_logit_nesting_no_P_C <- lmer(response ~ Predominant_hab
                                                          map_var_raunk_interaction +
                                                          mat_raunk_interaction +
                                                          mat_var_raunk_interaction +
-                                                         # humanfootprint_value:raunk_lf +
                                                          (1|Best_guess_binomial) +
                                                          (1|SS) +
                                                          (1|Class/Order/Family/Genus),
@@ -241,51 +231,6 @@ if(exists("pc_wec_int_maximal_gauss_logit_nesting_no_P_C")) {
 } else warning("pc_wec_int_maximal_gauss_logit_nesting_no_P_C failed to run")
 
 print("end")
-
-#' #' 
-#' ## ----pc_maximal_poisson,-----------------------------------------------------------------------------------------
-#' pc_maximal_poisson <- glmmTMB(Measurement ~ Predominant_habitat*raunk_lf +
-#'                                     humanfootprint_value +
-#'                                     Species_richness +
-#'                                     map +
-#'                                     map_var +
-#'                                     mat +
-#'                                     mat_var +
-#'                                     Species_richness:raunk_lf +
-#'                                     map_var:raunk_lf +
-#'                                     map:raunk_lf +
-#'                                     mat_var:raunk_lf +
-#'                                     mat:raunk_lf +
-#'                                     humanfootprint_value:raunk_lf +
-#'                                     
-#'                                     (1|Best_guess_binomial) +
-#'                                     (1|SS), family = poisson,
-#'                                   data = mydata)
-#' 
-#' saveRDS(pc_maximal_poisson, "pc_maximal_poisson.rds")
-#' #' 
-#' #' # dredge 
-#' #' Dredge to validate best combination of predictors
-#' ## ----pc dredge interactions,----------------------------------------------------------------------------------
-#' ## pc_full_dredge <- dredge(pc_best, beta = "sd", evaluate = TRUE, trace = TRUE,
-#' ##         rank = "AIC")
-## 
-## summary(pc_full_dredge) ##
-## plot(pc_full_dredge)
-
-
-## ----save models------------------------------------------------------------------------------------------------------------------------
-# saveRDS(pc_best_beta, "pc_best_beta.rds")
-#saveRDS(pc_best_interaction, "pc_best_beta_interactions.rds")
-# saveRDS(pc_best_poisson, "pc_best_poisson.rds")
-# saveRDS(pc_best_nbinom1, "pc_best_nbinom1.rds")
-# saveRDS(pc_best_gaussian, "pc_best_guassian.rds")
-
-
-
-
-
-
 
 #' 
 #' 

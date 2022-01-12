@@ -10,8 +10,28 @@
 ## aggregating the data to be used in the modelling dataset for investigating the effects of Raunkiaerian Life Form on 
 ## plant population responses to human land use. Also creates some overview plots
 
+## DATA NEEDED:
+
+# Data_01_PR_plantDiversityCorr.rds  - plant data from PREDICTS project: a global dataset of local biodiversity responses to land-use (Hudson et al., 2016)
+## obtained from PREDICTS team in 2017
+# Data_01_sitediversityData.rds - site level species diversity data, calculated by PREDICTS team in 2017
+# Data_01_try_species_info.csv - TRY plant trait database species info (version 5)
+# Data_01_trait_info_try.csv - TRY plant trait database trait info (version 5)
+# Data_01_lifeform_try.txt - TRY plant trait database lifeform data (version 5)
+
+# Data_01_sp.list_BIEN.rds -BIEN plant database species list, obtained in 2019 using lines 75-101
+# Data_01_lifeform_bien.rds - BIEN plant database lifeform data, obtained in 2019 using lines 75-101
+
+## bioclim variables from WorldClim version 1.4 - statistical summaries of climatic variables as static spatial bioclimatic variables at 30 second resolution, 
+## calculated using monthly records for temperature and rainfall from 1970-2000 (Fick & Hijmans, 2017). 
+# bio1.bil ## mean annual temperature (C*10)
+# bio12.bil ## mean annual precipatation (mm)
+# bio15.bil ## mean annual precip coeff variation
+# bio4.bil ## mean annual temp SD*100
+
+
 ## shell commands for running on the cluster
-## ssh -l mckeonc2 lonsdale.tchpc.tcd.ie
+## ssh -l mckeonc2 lonsdale.tchpc.tcd.ie
 ## password: 
 
 ## Set up
@@ -32,7 +52,7 @@ print("***Starting reading in species lists***")
 
 ## PREDICTS Data
 ## Read in PREDICTS plant data (2016 release) (Effort Corrected)
-PR <- readRDS("Data_PR_plantDiversityCorr.rds") 
+PR <- readRDS("Data_01_PR_plantDiversityCorr.rds") 
 
 ## create species list vector for PREDICTS species
 sp.list_PR <- as.vector(unique(PR$Best_guess_binomial)) ## 30255
@@ -41,7 +61,7 @@ sp.list_PR <- as.vector(unique(PR$Best_guess_binomial)) ## 30255
 
 ## TRY Data
 ##(Mannually download and) read in TRY species info data (version 5)
-sp.info_try <- read.csv("Data_try_species_info.csv") ## 279875 obs of 7 vars
+sp.info_try <- read.csv("Data_01_try_species_info.csv") ## 279875 obs of 7 vars
 
 ## Get the list of TRY species for which there are PREDICTS data
 sp.list_TRY <- Reduce(intersect, list(unique(sp.info_try$AccSpeciesName),unique(PR$Best_guess_binomial))) ## 9709 species
@@ -58,7 +78,7 @@ sp.list_TRY <- Reduce(intersect, list(unique(sp.info_try$AccSpeciesName),unique(
 #saveRDS(sp.list_BIEN, "Data_sp.list_BIEN.rds")
 
 ## or read back in 
-sp.list_BIEN <-readRDS("Data_sp.list_BIEN.rds") ## 10080 speices
+sp.list_BIEN <-readRDS("Data_01_sp.list_BIEN.rds") ## 10080 speices
 
 
 #Get overlap between TRY and BIEN
@@ -86,14 +106,14 @@ print("***Starting reading in trait lists***")
 # lifeform_bien <- BIEN_trait_traitbyspecies("whole plant growth form",species=sp.list_BIEN) ## 84206 obs of 13 vars
 # #saveRDS(lifeform_bien, "Data_lifeform_bien.rds")
 
-lifeform_bien <-readRDS("Data_lifeform_bien.rds") ## 84205 obs of 13 vars
+lifeform_bien <-readRDS("Data_01_lifeform_bien.rds") ## 84205 obs of 13 vars
 ## there are about 300 species in this bien life form list absent from the PREDICTS list. Could be worth cleaning lifeform_bien to get them...
 
 ## TRY
 
 # Get life form data from TRY
 # Read in TRY trait list
-trait_info_try <- read.csv("Data_trait_info_try.csv")
+trait_info_try <- read.csv("Data_01_trait_info_try.csv")
 
 ## fix the column names for this dataframe
 trait_info_try <- trait_info_try[-c(1:2),] 
@@ -120,7 +140,7 @@ trait_info_try <- trait_info_try[-1,]
 print("***Starting reading TRY life form data (large file)***")
 
 ## Note VERY large file, takes for ever and sometimes hangs. Read in premade datasets whenever possible.
-lifeform_try <- read.delim("Data_lifeform_try.txt", quote = "")
+lifeform_try <- read.delim("Data_01_lifeform_try.txt", quote = "")
 
 #EOF within quoted string - possibly a problem; look into it.
 
@@ -130,16 +150,6 @@ names(lifeform_try)
 # So I think I got more data than I asked for...
 # There are 800+ levels in "DataNames" when there should be 6.
 
-# Get try height data for relevant plants only
-# 
- # try_height <- read.delim("Data_try_height.txt", quote = "") ## 3428825 obs of 28 vars
- # try_height <- try_height[try_height$SpeciesName %in% PR$Best_guess_binomial & try_height$TraitName == "Plant height vegetative",]
- # length(unique(try_height$SpeciesName)) #2851
- # names(try_height)[names(try_height) == 'StdValue'] <- 'plant_height'
- # saveRDS(try_height, "Data_try_PR_height.rds") ## 65338 obs of 4 vars
-
-
-#try_height <- readRDS("Data_try_PR_height.rds") ## 73224 obs of 28 vars
 
 ## get progress messages
 print("***Finished reading TRY life form data (large file)***")
@@ -213,25 +223,10 @@ lifeform$raunk_lf[lifeform$raunk_lf == "geophyte" |lifeform$raunk_lf == "hydroph
 for (i in unique(lifeform$AccSpeciesName)){
   lifeform$numberlifeforms[lifeform$AccSpeciesName ==i] <- length(unique(levels(factor(lifeform$raunk_lf[lifeform$AccSpeciesName ==i]))))
 }
-## pretty much all species are entered as only having 1 life form (selection bias, as I left ones with multiple categorisations)
-## so not that usable as a variable
+## pretty much all species are entered as only having 1 life form so not that usable as a variable
 length(unique(lifeform$AccSpeciesName[lifeform$numberlifeforms !=1]))
 length(unique(lifeform$AccSpeciesName[lifeform$numberlifeforms ==1]))
 #write_csv(lifeform, "Data_lifeform.csv")
-
-
-## TRY height 
-
-
-# try_height %>% str()
-# try_height %>% .$plant_height %>% plot()
-
-## source cleaning script
-# source("cleaning_try.height.R")
-
-# try_height <- try_height %>% .[, which(names(.) %in% c("Dataset", "SpeciesName", "plant_height", "TraitName"))] ## 34820 obs of 4 vars
-# try_height <- droplevels(unique(try_height)) ## 23611 obs of 4 vars
-# try_height$SpeciesName %>% unique(.) %>% length(.) ## 2770
 
 
 ## get progress messages
@@ -297,8 +292,6 @@ names(full_clim) <- c("map", "mat", "map_var", "mat_var","Longitude", "Latitude"
 ## should now have df with 4285 obs of 6 variables, corresponding to the 
 ## latitude and longtitude of the 4 climate variables to be used in modelling for PREDICTS data
 
-
-
 plot(full_clim)
 #plot(clim_map)
 
@@ -316,7 +309,7 @@ plot(full_clim)
 ## Site diversity
 
 ## Read in site level diversity
-Site_Div <- readRDS("Data_sitediversityData.rds")
+Site_Div <- readRDS("Data_01_sitediversityData.rds")
 
 #x <- Reduce(intersect, list(unique(PR$SSBS),unique(Site_Div$SSBS))) ## 
 
@@ -332,72 +325,6 @@ Site_Div <- Site_Div %>% .[, which(names(.) %in% c("SSBS",# "Total_abundance",
 ))]
 
 
-## Human footprint
-
-## read in human footprint data
-
-hf <- raster("Data_wildareas-v3-2009-human-footprint-geotiff/wildareas-v3-2009-human-footprint.tif")
-
-# now I want to visualise this nicely... good link for tips:
-#   http://www.nickeubank.com/wp-content/uploads/2015/10/RGIS3_MakingMaps_part2_mappingRasterData.html 
-# https://rspatial.org/raster/spatial/8-rastermanip.html
-
-## Map human footprint dataa
-pal <- colorRampPalette(c('#0C276C', '#3B9088', '#EEFF00', '#ffffff'))
-hf_map <- calc(hf, fun=function(x){ x[x > 100] <- NA; return(x)} )
-par(bty = "n", mar=c(0.02,0.02,2,0.2))
-plot(hf_map, col = pal(50), main = "Human footprint 2009", yaxt="n", xaxt="n")
-
-
-## Co-ordinate system and spatial extent of human footprint diffirent from PR and bioclim. Must reproject.
-## https://datacarpentry.org/r-raster-vector-geospatial/03-raster-reproject-in-r/
-## Reproject human footprint value on to the specs of the bioclim data so it's compatible with PR co-ordinates
-hf_repro <- projectRaster(hf, clim_map)
-
-## I reprojected this raster to bioclim specs, but bioclim is at a much lower resolution, so I am getting a
-## veraged values instead of the detail I had before. Because human footprint value was averaged over adjacent 
-## grid cells to reduce resolution when reprojection, we get a few values that are higher than they should be, 
-## i.e. cells that were beside water bodies (given 120 value to distinguish from terrestrial values which were all sub 80 or so). 
-## So removing those high values, as that might be stopping models with human footprint from converging. 
-
-## Quick visualisation inspection to be sure it worked
-map
-hf_repro
-
-
-#hf_repro_map <- calc(hf_repro, fun=function(x){ x[x > 100] <- NA; return(x)} )
-plot(hf_repro, col = pal(50))
-plot(map,col = pal(50))
-
-## Successful, but gives a huge drop in resolution
-
-## Show sites in relation to human footprint
-par(bty = "n", mar=c(0.02,0.02,2,0.2))
-hf_repro_map <- calc(hf_repro, fun=function(x){ x[x > 100] <- NA; return(x)} )
-plot(hf_repro_map, col = pal(50), main = "Sites and Human footprint", yaxt="n", xaxt="n")
-points(PR_co$Longitude, PR_co$Latitude, type = "p", col = "orange")
-
-
-## Handle raster human footprint data so it can be added to modeling dataframe
-
-## #extract climate values for coordinates in (full) PREDICTS dataset
-full_humanfoot <- data.frame(raster::extract(hf_repro,PR_co)) 
-## create dataset with both climate values and co-ordinates of the values
-full_humanfoot <- cbind(full_humanfoot,PR_co)
-full_humanfoot <- unique(full_humanfoot)
-names(full_humanfoot) <- c("humanfootprint_value","Longitude", "Latitude") 
-
-
-##  drop humanfootprint data where values are greater than 80, which results from averging of 
-## cell values when resolution was reduced during reprojection. (there actually are non because of dropping values greater 
-## than 100 before reprojecting)
-full_humanfoot <- full_humanfoot[full_humanfoot$humanfootprint_value <= 80,]
-
-## should now have df with (less than) 18824 (actually 4309) obs of 3 variables, corresponding to the 
-## latitude and longtitude of the human footprint values to be used in modelling for PREDICTS data
-
-## WOOOOOOO!
-
 ## get progress messages
 print("***Finshed preparing additional variables***")
 print("***Starting creating model dataset***")
@@ -410,8 +337,6 @@ print("***Starting creating model dataset***")
 ModelDF <- merge(PR, lifeform, by.x = "Best_guess_binomial", by.y = "AccSpeciesName", all.x = TRUE) ## 2450447 obs. of 19 vars
 ModelDF <- merge(ModelDF, Site_Div, by = "SSBS", all.x = TRUE) ## 2450447 obs. of 20 vars
 ModelDF <- merge(ModelDF, full_clim, by = c("Longitude","Latitude"), all.x = TRUE) ## 2450447 obs. of 24 vars
-ModelDF <- merge(ModelDF, full_humanfoot, by = c("Longitude","Latitude"), all.x = TRUE) ## 2450447 obs. of 25 vars
-#ModelDF <- merge(ModelDF, try_height, by.x = "Best_guess_binomial", by.y = "SpeciesName", all.x = TRUE)
 ## Model dataframe (ModelDF) currently 2461783 obs of 24 variables, even though my last run gave 2450447 obs and I don't know why. 
 
 ## Find and remove all NA containing rows from dataframe
@@ -425,43 +350,19 @@ print(list) ## all variables should be zero
 
 ModelDF$Best_guess_binomial %>% unique(.) %>% length(.) ## 4804
 
-## Put in short dumby try_height to see species overlap
-
-# check <-as.data.frame(unique(try_height[, which(names(try_height) %in% c("SpeciesName"))]))
-# names(check) <- "SpeciesName"
-# check$x <-1
-#ModelDF <- merge(ModelDF, check, by.x = "Best_guess_binomial", by.y = "SpeciesName", all.x = TRUE)
-
-## So if I include try_height proper, I will lose 611478 obs from the current ModelDf, and be reduced to 2210 species instead of 8344, 
-## (though the DF will be bigger because of multiple values for some species' height's).
-## As it is, I don't want to do this. Leaving height out for now, and moving ahead to modelling...
-
-
 ## Drop NAs 
 ModelDF <- ModelDF %>% drop_na() ## 625436 obs. of 25 vars (4804 species though...)
 save <- ModelDF
 ## get the SD of continous vars before you scale them 
 list <- list()
 par(mfrow = c(3,2))
-cont_vars <- c("humanfootprint_value", "map", "map_var", "Species_richness", "mat", "mat_var")
+cont_vars <- c("map", "map_var", "Species_richness", "mat", "mat_var")
 for (i in cont_vars){
 hist(ModelDF[,i], main = paste(i))
 }
 
-
-# par(mfrow = c(3,2))
-# list <- c()
-# cont_vars <- c("humanfootprint_value", "map", "map_var", "Species_richness", "mat", "mat_var")
-# for (i in cont_vars){
-#    list[i] <- sd(ModelDF[,i])
-# }
-# 
-# list <- data.frame(list)
-# #saveRDS(list, "cont_var_sd.rds")
-
-
 ## Scale continuous variables so that the effect sizes can be directly compared
-cont_vars <- c("humanfootprint_value", "map", "map_var", "Species_richness", "mat", "mat_var", "numberlifeforms")
+cont_vars <- c("map", "map_var", "Species_richness", "mat", "mat_var", "numberlifeforms")
 for (i in cont_vars){
   ModelDF[, i] <- c(scale(ModelDF[,i]))
 }

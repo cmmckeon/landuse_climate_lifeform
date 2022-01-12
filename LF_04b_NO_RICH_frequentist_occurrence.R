@@ -1,5 +1,5 @@
 #' ---
-#' title: "LF_04d_NO_RICH_frequentist_occurrence.R"
+#' title: "LF_04b_NO_RICH_frequentist_occurrence.R"
 #' output: word_document
 #' ---
 #' 
@@ -42,8 +42,8 @@ mydata$animal <- mydata$Best_guess_binomial
 
 ## get taxomonic data for all species
 if(!exists("PR_oc")) {
-  if(file.exists("Data_PR_f_oc.rds")) {
-    try(PR_oc <- readRDS("Data_PR_f_oc.rds"))
+  if(file.exists("Data_03b_PR_f_oc.rds")) {
+    try(PR_oc <- readRDS("Data_03b_PR_f_oc.rds"))
   } else try(
     {PR <- readRDS("Data_PR_plantDiversityCorr.rds")
     levels(PR$Best_guess_binomial) <- gsub(" ", "_", levels(PR$Best_guess_binomial))
@@ -119,7 +119,6 @@ mydata$mat_var_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$mat
 print("start running model a")
 
 oc_wec_NO_RICH_int_maximal_zi_1_nested_no_U_T <- glmmTMB(pres_abs ~ Predominant_habitat.wec + raunk_lf.wec + hab_raunk_interaction +
-                                    # humanfootprint_value +
                                     map +
                                     map_var +
                                     mat +
@@ -128,7 +127,6 @@ oc_wec_NO_RICH_int_maximal_zi_1_nested_no_U_T <- glmmTMB(pres_abs ~ Predominant_
                                     map_var_raunk_interaction +
                                     mat_raunk_interaction +
                                     mat_var_raunk_interaction +
-                    #       humanfootprint_value:raunk_lf +
                            (1|Best_guess_binomial) +
                            (1|SS) +
                            (1|Class/Order/Family/Genus),
@@ -160,7 +158,6 @@ mydata$mat_var_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$mat
 
 print("start running model b")
 oc_wec_NO_RICH_int_maximal_zi_1_nested_no_PF_P <- glmmTMB(pres_abs ~ Predominant_habitat.wec + raunk_lf.wec + hab_raunk_interaction +
-                                                    # humanfootprint_value +
                                                     map +
                                                     map_var +
                                                     mat +
@@ -169,7 +166,6 @@ oc_wec_NO_RICH_int_maximal_zi_1_nested_no_PF_P <- glmmTMB(pres_abs ~ Predominant
                                                     map_var_raunk_interaction +
                                                     mat_raunk_interaction +
                                                     mat_var_raunk_interaction +
-                                                    #       humanfootprint_value:raunk_lf +
                                                     (1|Best_guess_binomial) +
                                                     (1|SS) +
                                                     (1|Class/Order/Family/Genus),
@@ -201,7 +197,6 @@ mydata$mat_var_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$mat
 
 print("start running model c")
 oc_wec_NO_RICH_int_maximal_zi_1_nested_no_P_C <- glmmTMB(pres_abs ~ Predominant_habitat.wec + raunk_lf.wec + hab_raunk_interaction +
-                                                   # humanfootprint_value +
                                                    map +
                                                    map_var +
                                                    mat +
@@ -210,7 +205,6 @@ oc_wec_NO_RICH_int_maximal_zi_1_nested_no_P_C <- glmmTMB(pres_abs ~ Predominant_
                                                    map_var_raunk_interaction +
                                                    mat_raunk_interaction +
                                                    mat_var_raunk_interaction +
-                                                   #       humanfootprint_value:raunk_lf +
                                                    (1|Best_guess_binomial) + 
                                                    (1|SS) +
                                                    (1|Class/Order/Family/Genus),

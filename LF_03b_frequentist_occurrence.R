@@ -13,10 +13,9 @@ setwd("~/PREDICTS")
 '%nin%' = Negate('%in%')
 #' 
 ## ----setup, include=FALSE---------------------------------------------------------------------------------------------------------------
-#install.packages(c("tidyverse", "lme4","optimx", "DHARMa", "glmmTMB", "MuMIn", "effects"))
+#install.packages(c("tidyverse", "lme4","optimx", "glmmTMB", "MuMIn", "effects"))
 library(tidyverse)
 library(lme4)
-#library(DHARMa)
 library(optimx) 
 library(glmmTMB)
 library(wec)
@@ -31,45 +30,29 @@ if(!exists("ModelDF")) {
   if(file.exists("Data_ModelDF.rds")) {
     try(ModelDF <- readRDS("Data_ModelDF.rds")) }
   else source("LF_01_data_handling.R")
-} ## 02/09/2020 624696 obs of 25 vars, unique, continous vars are scaled
+} ## 02/09/2020 624696 obs of 25 vars, unique, continuous vars are scaled
 
 
 ## ---------------------------------------------------------------------------------------------------------------------------------------
-## handle model dataframe to get just percent cover data, with species levels in the right format
+## handle model dataframe to get species levels in the right format
 levels(ModelDF$Best_guess_binomial) <- gsub(" ", "_", levels(ModelDF$Best_guess_binomial))
 mydata <- ModelDF
 mydata$animal <- mydata$Best_guess_binomial
 
 ## get taxomonic data for all species
 if(!exists("PR_oc")) {
-  if(file.exists("Data_PR_f_oc.rds")) {
-    try(PR_oc <- readRDS("Data_PR_f_oc.rds"))
+  if(file.exists("Data_03b_PR_f_oc.rds")) {
+    try(PR_oc <- readRDS("Data_03b_PR_f_oc.rds"))
   } else try(
     {PR <- readRDS("Data_PR_plantDiversityCorr.rds")
     levels(PR$Best_guess_binomial) <- gsub(" ", "_", levels(PR$Best_guess_binomial))
     PR <- PR[PR$Best_guess_binomial %in% mydata$Best_guess_binomial,]
     PR_oc <- unique(PR[, which(names(PR) %in% c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus",
-                                                "Best_guess_binomial"))])})
+                                                "Best_guess_binomial"))])
+    saveRDS(PR_oc, "Data_03b_PR_f_oc.rds")})
 }
 
 mydata <- droplevels(merge(mydata, PR_oc, by = "Best_guess_binomial",all.x = TRUE)) 
-
-## set up for weighted effects coding
-
-print("configure contrasts for model a")
-## main effects
-mydata$Predominant_habitat.wec <- factor(mydata$Predominant_habitat)
-contrasts(mydata$Predominant_habitat.wec) <- contr.wec(mydata$Predominant_habitat, "Urban")
-mydata$raunk_lf.wec <- factor(mydata$raunk_lf)
-contrasts(mydata$raunk_lf.wec) <- contr.wec(mydata$raunk_lf, "therophyte")
-## interactions
-mydata$hab_raunk_interaction <- mydata$Predominant_habitat
-mydata$hab_raunk_interaction <- wec.interact(mydata$Predominant_habitat.wec, mydata$raunk_lf.wec)
-mydata$map_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$map)
-mydata$map_var_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$map_var)
-mydata$mat_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$mat)
-mydata$mat_var_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$mat_var)
-mydata$spp_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$Species_richness)
 
 ## ----oc_null----------------------------------------------------------------------------------------------------------------------------
 
@@ -91,7 +74,6 @@ mydata$spp_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$Species
 
 #' ## ----oc_maximal--------------------------------------------------------------------------------------------
 # oc_maximal_zi <- glmmTMB(pres_abs ~ Predominant_habitat*raunk_lf +
-#                                  humanfootprint_value +
 #                                  Species_richness +
 #                                  map +
 #                                  map_var +
@@ -102,7 +84,6 @@ mydata$spp_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$Species
 #                                  map:raunk_lf +
 #                                  mat_var:raunk_lf +
 #                                  mat:raunk_lf +
-#                                  humanfootprint_value:raunk_lf +
 #                            (1|Best_guess_binomial) +
 #                            (1|SS), # +
 #                            # (1|SSS) +
@@ -117,10 +98,28 @@ mydata$spp_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$Species
 #   try(saveRDS(oc_maximal_zi, "f_oc_maximal_zi.rds"))
 # } else warning("oc_maximal_zi failed to run")
 
+#' ## ----oc_maximal_wec--------------------------------------------------------------------------------------------
+#' 
+## set up for weighted effects coding
+
+print("configure contrasts for model a")
+## main effects
+mydata$Predominant_habitat.wec <- factor(mydata$Predominant_habitat)
+contrasts(mydata$Predominant_habitat.wec) <- contr.wec(mydata$Predominant_habitat, "Urban")
+mydata$raunk_lf.wec <- factor(mydata$raunk_lf)
+contrasts(mydata$raunk_lf.wec) <- contr.wec(mydata$raunk_lf, "therophyte")
+## interactions
+mydata$hab_raunk_interaction <- mydata$Predominant_habitat
+mydata$hab_raunk_interaction <- wec.interact(mydata$Predominant_habitat.wec, mydata$raunk_lf.wec)
+mydata$map_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$map)
+mydata$map_var_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$map_var)
+mydata$mat_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$mat)
+mydata$mat_var_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$mat_var)
+mydata$spp_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$Species_richness)
+
 print("start running model a")
 
 oc_wec_int_maximal_zi_1_nested_no_U_T <- glmmTMB(response ~ Predominant_habitat.wec + raunk_lf.wec + hab_raunk_interaction +
-                                    # humanfootprint_value +
                                     Species_richness +
                                     map +
                                     map_var +
@@ -131,7 +130,6 @@ oc_wec_int_maximal_zi_1_nested_no_U_T <- glmmTMB(response ~ Predominant_habitat.
                                     map_var_raunk_interaction +
                                     mat_raunk_interaction +
                                     mat_var_raunk_interaction +
-                    #       humanfootprint_value:raunk_lf +
                            (1|Best_guess_binomial) +
                            (1|SS) +
                            (1|Class/Order/Family/Genus),
@@ -164,7 +162,6 @@ mydata$spp_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$Species
 
 print("start running model b")
 oc_wec_int_maximal_zi_1_nested_no_PF_P <- glmmTMB(pres_abs ~ Predominant_habitat.wec + raunk_lf.wec + hab_raunk_interaction +
-                                                   # humanfootprint_value +
                                                    Species_richness +
                                                    map +
                                                    map_var +
@@ -175,7 +172,6 @@ oc_wec_int_maximal_zi_1_nested_no_PF_P <- glmmTMB(pres_abs ~ Predominant_habitat
                                                    map_var_raunk_interaction +
                                                    mat_raunk_interaction +
                                                    mat_var_raunk_interaction +
-                                                   #       humanfootprint_value:raunk_lf +
                                                    (1|Best_guess_binomial) +
                                                    (1|SS) +
                                                    (1|Class/Order/Family/Genus),
@@ -208,7 +204,6 @@ mydata$spp_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$Species
 
 print("start running model c")
 oc_wec_int_maximal_zi_1_nested_no_P_C <- glmmTMB(pres_abs ~ Predominant_habitat.wec + raunk_lf.wec + hab_raunk_interaction +
-                                                    # humanfootprint_value +
                                                     Species_richness +
                                                     map +
                                                     map_var +
@@ -219,7 +214,6 @@ oc_wec_int_maximal_zi_1_nested_no_P_C <- glmmTMB(pres_abs ~ Predominant_habitat.
                                                     map_var_raunk_interaction +
                                                     mat_raunk_interaction +
                                                     mat_var_raunk_interaction +
-                                                    #       humanfootprint_value:raunk_lf +
                                                     (1|Best_guess_binomial) + 
                                                     (1|SS) +
                                                     (1|Class/Order/Family/Genus),
@@ -234,26 +228,6 @@ if(exists("oc_wec_int_maximal_zi_1_nested_no_P_C")) {
 } else warning("oc_wec_int_maximal_zi_1_nested_no_P_C failed to run")
 
 print("end")
-
-
-#' #' # dredge 
-#' #' Dredge to validate best combination of predictors
-#' ## ----oc dredge interactions,----------------------------------------------------------------------------------
-#' ## oc_full_dredge <- dredge(oc_best, beta = "sd", evaluate = TRUE, trace = TRUE,
-#' ##         rank = "AIC")
-## 
-## summary(oc_full_dredge) ##
-## plot(oc_full_dredge)
-
-
-## ----save models------------------------------------------------------------------------------------------------------------------------
-
-
-
-
-
-
-
 
 #' 
 #' 

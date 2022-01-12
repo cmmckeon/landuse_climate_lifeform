@@ -1,7 +1,5 @@
 ## LF_05_frequentist_diagnostics
 
-## not even a little bit clean
-
 ## set up --------------------------------------------------------
 #install.packages(c("DHARMa"))
 
@@ -92,7 +90,6 @@ testZeroInflation(simulationOutput)
 ## residuals per variable 
 plotResiduals(simulationOutput, mydata$raunk_lf) 
 plotResiduals(simulationOutput, mydata$Predominant_habitat) 
-plotResiduals(simulationOutput, mydata$humanfootprint_value) 
 plotResiduals(simulationOutput, mydata$map)
 plotResiduals(simulationOutput, mydata$mat)
 plotResiduals(simulationOutput, mydata$Species_richness)
@@ -107,10 +104,10 @@ plotResiduals(simulationOutput, mydata$mat_var)
 new_data <- mydata
 new_data <- new_data[, which(names(new_data) %in% c("Best_guess_binomial", "Predominant_habitat", "Measurement", "SS", 
                                                    "raunk_lf", "Species_richness", 
-                                                    "map", "mat", "map_var", "mat_var", "humanfootprint_value", "pres_abs", 
+                                                    "map", "mat", "map_var", "mat_var", "pres_abs", 
                                                     "response"))]
 cont <- c("Species_richness", 
-  "map", "mat", "map_var", "mat_var", "humanfootprint_value")
+  "map", "mat", "map_var", "mat_var")
 for (i in cont){
   new_data[,i] <-mean(new_data[,i])
 }
