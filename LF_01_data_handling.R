@@ -107,7 +107,7 @@ print("***Starting reading in trait lists***")
 # #saveRDS(lifeform_bien, "Data_lifeform_bien.rds")
 
 lifeform_bien <-readRDS("Data_01_lifeform_bien.rds") ## 84205 obs of 13 vars
-## there are about 300 species in this bien life form list absent from the PREDICTS list. Could be worth cleaning lifeform_bien to get them...
+## there are about 300 species in this bien life form list absent from the PREDICTS list. 
 
 ## TRY
 
@@ -139,12 +139,10 @@ trait_info_try <- trait_info_try[-1,]
 ## get progress messages
 print("***Starting reading TRY life form data (large file)***")
 
-## Note VERY large file, takes for ever and sometimes hangs. Read in premade datasets whenever possible.
+## Note VERY large file, takes for ever and sometimes hangs. Read in subsiquent premade datasets whenever possible.
 lifeform_try <- read.delim("Data_01_lifeform_try.txt", quote = "")
 
-#EOF within quoted string - possibly a problem; look into it.
-
-names(lifeform_try)
+#names(lifeform_try)
 
 
 # So I think I got more data than I asked for...
@@ -196,7 +194,7 @@ length(unique(raunk5$AccSpeciesName)) ## 11337 species
 
 
 ## looking at growth form (not classed as raunkiear) try data
-pgf$OrigValueStr %>% levels(.)
+#pgf$OrigValueStr %>% levels(.)
 
 ## initially 1442 levels yikes
 source("cleaning_try.lifeform.R") ## not cleaning that well, but should be able to use some of the 
@@ -253,7 +251,7 @@ mat_var <-raster('bio4.bil') ## mean annual temp SD*100
 #Subset PREDICTS data keeping only variables relevant to anlaysis
 
 PR <- PR %>% .[.$Best_guess_binomial %in% lifeform$AccSpeciesName,]
-length(unique(PR$Best_guess_binomial)) #5072
+length(unique(PR$Best_guess_binomial)) #5313
 #dput(names(PR))
 PR <- PR %>% .[.$Diversity_metric == "abundance" | .$Diversity_metric == "percent cover"| .$Diversity_metric == "occurrence",]
 PR <- PR %>% .[, which(names(.) %in% c("Study_name", "Region", "Diversity_metric","Predominant_habitat",
@@ -261,7 +259,7 @@ PR <- PR %>% .[, which(names(.) %in% c("Study_name", "Region", "Diversity_metric
                                        "Country", "Biome", "Measurement", "SS", "SSS", "SSB", "SSBS",
                                        "Best_guess_binomial"))] ##, "Sample_midpoint", "Sample_start_earliest", "Sample_end_latest"))] ## can be included for checking data date range
 PR <- droplevels(PR)
-PR <-unique(PR) ## 530048 obs of 16 vars
+PR <-unique(PR) ## 5551081 obs of 16 vars
 
 ## Explore raster data
 
@@ -325,6 +323,74 @@ Site_Div <- Site_Div %>% .[, which(names(.) %in% c("SSBS",# "Total_abundance",
 ))]
 
 
+## Human footprint
+# no longer used as a variable, but retained as it affects the creation of the final model dataframe
+# (same final number of species, but changes the number of sites slightly, and so it is being kept in for reproducibility)
+
+## read in human footprint data
+
+hf <- raster("Data_01_wildareas-v3-2009-human-footprint-geotiff/wildareas-v3-2009-human-footprint.tif")
+
+# now I want to visualise this nicely... good link for tips:
+#   http://www.nickeubank.com/wp-content/uploads/2015/10/RGIS3_MakingMaps_part2_mappingRasterData.html 
+# https://rspatial.org/raster/spatial/8-rastermanip.html
+
+## Map human footprint dataa
+pal <- colorRampPalette(c('#0C276C', '#3B9088', '#EEFF00', '#ffffff'))
+hf_map <- calc(hf, fun=function(x){ x[x > 100] <- NA; return(x)} )
+par(bty = "n", mar=c(0.02,0.02,2,0.2))
+plot(hf_map, col = pal(50), main = "Human footprint 2009", yaxt="n", xaxt="n")
+
+
+## Co-ordinate system and spatial extent of human footprint diffirent from PR and bioclim. Must reproject.
+## https://datacarpentry.org/r-raster-vector-geospatial/03-raster-reproject-in-r/
+## Reproject human footprint value on to the specs of the bioclim data so it's compatible with PR co-ordinates
+hf_repro <- projectRaster(hf, clim_map)
+
+## I reprojected this raster to bioclim specs, but bioclim is at a much lower resolution, so I am getting a
+## averaged values instead of the detail I had before. Because human footprint value was averaged over adjacent 
+## grid cells to reduce resolution when reprojection, we get a few values that are higher than they should be, 
+## i.e. cells that were beside water bodies (given 120 value to distinguish from terrestrial values which were all sub 80 or so). 
+## So removing those high values, as that might be stopping models with human footprint from converging. 
+
+## Quick visualisation inspection to be sure it worked
+map
+hf_repro
+
+
+#hf_repro_map <- calc(hf_repro, fun=function(x){ x[x > 100] <- NA; return(x)} )
+plot(hf_repro, col = pal(50))
+plot(map,col = pal(50))
+
+## Successful, but gives a huge drop in resolution
+
+## Show sites in relation to human footprint
+par(bty = "n", mar=c(0.02,0.02,2,0.2))
+hf_repro_map <- calc(hf_repro, fun=function(x){ x[x > 100] <- NA; return(x)} )
+plot(hf_repro_map, col = pal(50), main = "Sites and Human footprint", yaxt="n", xaxt="n")
+points(PR_co$Longitude, PR_co$Latitude, type = "p", col = "orange")
+
+
+## Handle raster human footprint data so it can be added to modeling dataframe
+
+## #extract climate values for coordinates in (full) PREDICTS dataset
+full_humanfoot <- data.frame(raster::extract(hf_repro,PR_co)) 
+## create dataset with both climate values and co-ordinates of the values
+full_humanfoot <- cbind(full_humanfoot,PR_co)
+full_humanfoot <- unique(full_humanfoot)
+names(full_humanfoot) <- c("humanfootprint_value","Longitude", "Latitude") 
+
+
+##  drop humanfootprint data where values are greater than 80, which results from averging of 
+## cell values when resolution was reduced during reprojection. (there actually are non because of dropping values greater 
+## than 100 before reprojecting)
+full_humanfoot <- full_humanfoot[full_humanfoot$humanfootprint_value <= 80,]
+
+## should now have df with (less than) 18824 (actually 4309) obs of 3 variables, corresponding to the 
+## latitude and longtitude of the human footprint values to be used in modelling for PREDICTS data
+
+## WOOOOOOO!
+
 ## get progress messages
 print("***Finshed preparing additional variables***")
 print("***Starting creating model dataset***")
@@ -337,7 +403,8 @@ print("***Starting creating model dataset***")
 ModelDF <- merge(PR, lifeform, by.x = "Best_guess_binomial", by.y = "AccSpeciesName", all.x = TRUE) ## 2450447 obs. of 19 vars
 ModelDF <- merge(ModelDF, Site_Div, by = "SSBS", all.x = TRUE) ## 2450447 obs. of 20 vars
 ModelDF <- merge(ModelDF, full_clim, by = c("Longitude","Latitude"), all.x = TRUE) ## 2450447 obs. of 24 vars
-## Model dataframe (ModelDF) currently 2461783 obs of 24 variables, even though my last run gave 2450447 obs and I don't know why. 
+ModelDF <- merge(ModelDF, full_humanfoot, by = c("Longitude","Latitude"), all.x = TRUE) ## 2450447 obs. of 25 vars
+ModelDF <- unique(ModelDF)
 
 ## Find and remove all NA containing rows from dataframe
 ## Looking at which varibles still contain NAs
@@ -351,25 +418,24 @@ print(list) ## all variables should be zero
 ModelDF$Best_guess_binomial %>% unique(.) %>% length(.) ## 4804
 
 ## Drop NAs 
-ModelDF <- ModelDF %>% drop_na() ## 625436 obs. of 25 vars (4804 species though...)
+ModelDF <- ModelDF %>% drop_na() ## Model dataframe (ModelDF) currently 624696 obs of 23 variables
 save <- ModelDF
-## get the SD of continous vars before you scale them 
-list <- list()
-par(mfrow = c(3,2))
+ModelDF <- save
+
 cont_vars <- c("map", "map_var", "Species_richness", "mat", "mat_var")
-for (i in cont_vars){
-hist(ModelDF[,i], main = paste(i))
+for(i in cont_vars){
+  ModelDF[,paste(i, "_unscaled", sep = "")] <- ModelDF[,i]
 }
 
 ## Scale continuous variables so that the effect sizes can be directly compared
-cont_vars <- c("map", "map_var", "Species_richness", "mat", "mat_var", "numberlifeforms")
+cont_vars <- c("map", "map_var", "Species_richness", "mat", "mat_var", "humanfootprint_value")
 for (i in cont_vars){
   ModelDF[, i] <- c(scale(ModelDF[,i]))
 }
 
 ## Save
 ModelDF$raunk_lf <- as.factor(ModelDF$raunk_lf)
-ModelDF <- unique(ModelDF) ## 625436 obs. of 24 vars 
+ModelDF <- unique(ModelDF) ## 624696 obs. of 28 vars 
 
 ## create occurrence column 
 ModelDF$pc_binary[ModelDF$Diversity_metric == "percent cover"] <- 1
