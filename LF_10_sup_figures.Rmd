@@ -131,7 +131,7 @@ ModelDF$Predominant_habitat <- factor(ModelDF$Predominant_habitat,
 
 ```{r, fig.height = 16, fig.width = 24}
 source("plot_enviro_pca.R")
-biome_rast <- raster("anthromes_2_base_data_GeoTIFF/potveg.tif")
+biome_rast <- raster("Data_08_anthromes_2_base_data_GeoTIFF/potveg.tif")
 biome_rast <- calc(biome_rast, fun=function(x){ x[x <= 0] <- NA; return(x)} )
   par(bg= "black", bty = "l", col="white", col.main = "white", col.lab = "white", col.axis = "white")
 plot(biome_rast, col=viridis_pal(option="C")(900))
@@ -139,7 +139,7 @@ plot(biome_rast, col=viridis_pal(option="C")(900))
 ```
 
 ```{r fig.height = 8, fig.width = 10}
-biome <- readRDS("average_biome_clim_vars.rds")
+biome <- readRDS("Data_08_average_biome_clim_vars.rds")
 biome$biome <- factor(biome$biome, 
                       levels = c("Tropical Evergreen Woodland", "Tropical Deciduous Woodland", 
                                  "Dense Shrubland", "Savanna", "Open Shrubland", "Deserts and Barren", 
@@ -206,7 +206,7 @@ annotate_figure(resp, #top = text_grob("Relative proportions of model data", fac
 
 ## Appendix S5 – Biome and Ecoregion visual summaries
 ```{r fig.height = 4, fig.width = 10}
-biome <- readRDS("average_biome_clim_vars.rds")
+biome <- readRDS("Data_08_average_biome_clim_vars.rds")
 
 ## make plot
 biome_ave <-ggplot(biome, aes(mat, map, colour = biome)) + 
@@ -227,7 +227,7 @@ annotate_figure(resp, top = text_grob("Biome averages for climatic variables", f
 ```
 
 ```{r fig.height = 4, fig.width = 6}
-eco <- readRDS("average_ecoregion_clim_vars.rds")
+eco <- readRDS("Data_08_average_ecoregion_clim_vars.rds")
 
 ## make plot
 eco_ave <-ggplot(eco, aes(mat, map, colour = mat_var)) + 
@@ -244,9 +244,9 @@ annotate_figure(resp, top = text_grob("Ecoregion averages for climatic variables
 ```
 
 ```{r}
-data <- readRDS("sd_model_clim_data.rds")
-biome_diff <- readRDS("average_biome_diffs.rds")
-eco_diff <- readRDS("average_ecoregion_diffs.rds")
+data <- readRDS("Data_08_sd_model_clim_data.rds")
+biome_diff <- readRDS("Data_08_average_biome_diffs.rds")
+eco_diff <- readRDS("Data_08_average_ecoregion_diffs.rds")
 vars <- c("map", "mat", "map_var", "mat_var")
 
 ## plot comparison of average differences with 1 sd in model data

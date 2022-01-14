@@ -402,16 +402,12 @@ f_pc_sum <- unique(f_pc_sum)
 ```
 
 ```{r, eval=FALSE, include=FALSE}
-## now get average values, for cells where rounding to 4 decimal places did not create the exact same values
-## average over the same rns
-## but for now cheat and drop to 3
 f_pc_sum$Estimate <- round(f_pc_sum$Estimate, 2)
 f_pc_sum$Std.Error <- round(f_pc_sum$Std.Error, 2)
 f_pc_sum$`t value` <- round(f_pc_sum$`t value`, 2)
 f_pc_sum$eff_sz <- round(f_pc_sum$eff_sz, 2)
 f_pc_sum$ci <- round(f_pc_sum$ci, 2)
 f_pc_sum <- unique(f_pc_sum)
-
 ```
 
 make the column for the histogram

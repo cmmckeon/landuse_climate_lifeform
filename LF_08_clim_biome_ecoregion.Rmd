@@ -5,6 +5,13 @@ date: "12/9/2020"
 output: pdf_document
 ---
 
+DATA NEEDED:
+
+
+Data_08_anthromes_2_base_data_GeoTIFF/potveg.tif data from Ellis et al. (2010)
+ecoregions based on Olson et al. (2001).
+
+
 ## set up
 ```{r}
 library(tidyverse)
@@ -64,7 +71,7 @@ if(file.exists("Data_ModelDF_unscaled.rds")) {
 ## Biomes
 using data from Elis's anthromes to try figure out some average biome cliamte-clines
 ```{r eval=FALSE, include=FALSE}
-biome_rast <- raster("anthromes_2_base_data_GeoTIFF/potveg.tif")
+biome_rast <- raster("Data_08_anthromes_2_base_data_GeoTIFF/potveg.tif")
 biome_rast <- calc(biome_rast, fun=function(x){ x[x <= 0] <- NA; return(x)} )
 plot(biome_rast, col=viridis_pal(option="C")(900))
 
@@ -108,11 +115,11 @@ biome$biome <- factor(biome$biome,
                                  "Grassland and Steppe", "Mixed Woodland", "Boreal Woodland", 
                                  "Tundra"))
 
-#saveRDS(new, "average_biome_clim_vars.rds")
+#saveRDS(new, "Data_08_average_biome_clim_vars.rds")
 ```
 
 ```{r}
-biome <- readRDS("average_biome_clim_vars.rds")
+biome <- readRDS("Data_08_average_biome_clim_vars.rds")
 ```
 
 
@@ -120,14 +127,15 @@ biome <- readRDS("average_biome_clim_vars.rds")
 
 ```{r eval=FALSE, include=FALSE}
 #eco <- shapefile("terr-ecoregions-TNC/tnc_terr_ecoregions.shp")
-# teow <- readOGR(dsn = "official", layer = "wwf_terr_ecos")
-# x <- rasterize(teow, mat)
-# writeRaster(x, "teow.grd")
-#x <-gdalUtils::gdal_rasterize(teow, mat)
+
+# teow <- readOGR(dsn = "Data_08_official", layer = "wwf_terr_ecos")
+# # x <- rasterize(teow, mat)
+# # writeRaster(x, "teow.grd")
+# x <-gdalUtils::gdal_rasterize(teow, mat)
 # levels(x)
-#a <- deratify(x, "ECO_NAME")
-#writeRaster(a, "teow_econame.grd")
-eco_rast <- raster("teow_econame.grd")
+# a <- deratify(x, "ECO_NAME")
+#writeRaster(a, "Data_08_teow_econame.grd")
+eco_rast <- raster("Data_08_teow_econame.grd")
 
 clim_map <- brick(map, mat, map_var, mat_var, eco_rast)
 
@@ -154,15 +162,15 @@ new <- unique(new)
 new <- new[order(-new$mat),]
 ## drops 17 ecoregions (too coastal I assume)
 
-#saveRDS(new, "average_ecoregion_clim_vars.rds")
+#saveRDS(new, "Data_08_average_ecoregion_clim_vars.rds")
 ```
 
 
 ```{r}
-eco <- readRDS("average_ecoregion_clim_vars.rds")
+eco <- readRDS("Data_08_average_ecoregion_clim_vars.rds")
 ```
 
-
+## Average climatic differences between biomes and ecoregions
 ```{r}
 average_diff <- function(clim_var, name, len){
   x <- data.frame()
@@ -249,9 +257,9 @@ names(data) <- vars
 ```
 
 ```{r}
-# saveRDS(data, "sd_model_clim_data.rds")
-# saveRDS(biome_diff, "average_biome_diffs.rds")
-# saveRDS(eco_diff, "average_ecoregion_diffs.rds")
+# saveRDS(data, "Data_08_sd_model_clim_data.rds")
+# saveRDS(biome_diff, "Data_08_average_biome_diffs.rds")
+# saveRDS(eco_diff, "Data_08_average_ecoregion_diffs.rds")
 ```
 
 ```{r}
@@ -260,9 +268,7 @@ for(i in vars){
   print(length(eco_diff[,i][eco_diff[,i] <= sd(data[,i])])/length(eco_diff[,i]))
   }
 ```
-
-
-safe
+## Plot
 ```{r eval=FALSE, include=FALSE}
 par(mfrow =c(3,4), mar=c(4,2,3,2))
 
@@ -350,134 +356,7 @@ for (i in names(Filter(is.numeric, sum))) {
   sum[,i] <- round(sum[,i], 2)}
 sum$rn <-c("Model data", "sd", "mean", "median","Biome", "sd", "mean", "median", "Ecoregion", "sd", "mean", "median")
 all_clim_ave <- sum[c(5,1:4)]
-#saveRDS(all_clim_ave, "all_clim_ave.rds")
+#saveRDS(all_clim_ave, "Data_08_all_clim_ave.rds")
 ```
-
-```{r eval=FALSE, include=FALSE}
-# c <- list()
-#  c[["map"]] 
- 
-c <- list()
-for(i in names(data[,which(names(data) %in% vars)])){
-c[[i]] <- print(ggplot(data, aes(x=data[,i])) + 
-    geom_histogram(aes(y=..density..), color="grey", fill="grey")+
-    geom_density(alpha=.2, fill="grey")+
-    geom_vline(aes(xintercept=mean(data[,i])),
-            color="black", size=1) +
-   geom_vline(aes(xintercept=median(data[,i])),
-            color="black", linetype="dashed", size=1) + 
-   geom_vline(aes(xintercept=mean(data[,i]) + sd(data[,i])),
-            color="red", size=1) + 
-      geom_vline(aes(xintercept=mean(data[,i]) - sd(data[,i])),
-            color="red", size=1) + 
-   theme(axis.text.x = element_blank(), axis.title.x = element_blank(),
-                         axis.ticks.x = element_blank(), axis.title.y = element_blank())) }
-c
-
-# c <- ggplot(data, aes(x=data[,i])) + 
-#     geom_histogram(aes(y=..density..), color="grey", fill="grey")+
-#     geom_density(alpha=.2, fill="grey")+
-#     geom_vline(aes(xintercept=mean(map)),
-#             color="black", size=1) +
-#    geom_vline(aes(xintercept=median(map)),
-#             color="black", linetype="dashed", size=1) + 
-#    geom_vline(aes(xintercept=mean(map) + sd(map)),
-#             color="red", size=1) + 
-#       geom_vline(aes(xintercept=mean(map) - sd(map)),
-#             color="red", size=1) + 
-#    theme(axis.text.x = element_blank(), axis.title.x = element_blank(),
-#                          axis.ticks.x = element_blank(), axis.title.y = element_blank()) 
-#  
- egg::ggarrange(c[[1]], c[[2]],  nrow = 1, ncol = 2) 
-
-```
-
-```{r eval=FALSE, include=FALSE}
-c <- list()
-for(i in names(data[,which(names(data) %in% vars)])){
- c[[i]] <- ggplot(data, aes(x=data[,i])) + 
-    geom_histogram(aes(y=..density..), color="black", fill="white")+
-    geom_density(alpha=.2, fill="#FF6666")+
-    geom_vline(aes(xintercept=mean(data[,i])),
-            color="black", size=1) +
-   geom_vline(aes(xintercept=median(data[,i])),
-            color="black", linetype="dashed", size=1)} 
-
-b <- list()
-for(i in names(biome_diff[,which(names(biome_diff) %in% vars)])){
- b[[i]] <- ggplot(biome_diff, aes(x=biome_diff[,i])) + 
-    geom_histogram(aes(y=..density..), color="black", fill="white")+
-    geom_density(alpha=.2, fill="#FF6666")} 
-
-e <- list()
-for(i in names(eco_diff[,which(names(eco_diff) %in% vars)])){
- e[[i]] <- ggplot(eco_diff, aes(x=eco_diff[,i])) + 
-    geom_histogram(aes(y=..density..), color="black", fill="white")+
-    geom_density(alpha=.2, fill="#FF6666")} 
-```
-
-```{r eval=FALSE, include=FALSE}
-# library(gridExtra)
-# #do.call(grid.arrange, c(c[[1]],b[[1]],e[[1]]))
-egg::ggarrange(c[[1]], c[[2]], c[[3]], c[[4]], b[[1]], b[[2]], b[[3]], b[[4]], e[[1]], e[[2]], e[[3]], e[[4]], nrow = 3, ncol = 4)  #, heights = c(0.75, 0.25)
-
-```
-
-```{r eval=FALSE, include=FALSE}
-data$group <- "data"
-biome_diff$group <- "biome"
-eco_diff$group <- "eco"
-
-d <- rbind(data[,i])
-
-mydata <- rbind(data,
-                biome_diff[, which(names(biome_diff) %in% c("map", "mat", "map_var", "mat_var", "group"))], 
-                eco_diff[, which(names(eco_diff) %in% c("map", "mat", "map_var", "mat_var", "group"))])
-
-dstack <- c()
-for(i in vars){
-  dstack <- as.data.frame(rbind(dstack, cbind(data[,i], i, "data")))}
-names(dstack) <- c("value", "var", "group")
-dstack$value <- as.numeric(as.character(dstack$value))
-
-bstack <- c()
-for(i in vars){
-  bstack <- as.data.frame(rbind(bstack, cbind(biome_diff[,i], i, "biome")))}
-names(bstack) <- c("value", "var", "group")
-
-estack <- c()
-for(i in vars){
-  estack <- as.data.frame(rbind(estack, cbind(eco_diff[,i], i, "eco")))}
-names(estack) <- c("value", "var", "group")
-
-```
-
-```{r eval=FALSE, include=FALSE}
-d <- ggplot(dstack, aes(x=value)) +
-    geom_histogram(aes(y=..density..), colour="black", fill="black") +
-    geom_density(alpha=.2, fill="#FF6666") +
-    geom_vline(aes(xintercept=mean(value)),color="black", size=1) +
-  geom_vline(aes(xintercept=median(value)), linetype="dashed",) +
-  facet_grid(cols = vars(var))
-```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 

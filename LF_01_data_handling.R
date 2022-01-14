@@ -185,7 +185,7 @@ pgf <- readRDS("Data_try_Plant.growth.form.Rds")
 ## lets see how many species' life forms we can get out of these with some cleaning
 
 ## Looking at the Raunkier life form trait
-pgl_raunk$OrigValueStr %>% factor(.) %>% table(.) %>% .[order(.)]
+#pgl_raunk$OrigValueStr %>% factor(.) %>% table(.) %>% .[order(.)]
 
 ## Source cleaning script for TRY raunkiaer lifeform levels
 ## initially 144 levels
@@ -220,12 +220,12 @@ lifeform <- rbind(lifeform, bien_lfs) ## 40499 unique species
 lifeform$raunk_lf[lifeform$raunk_lf == "geophyte" |lifeform$raunk_lf == "hydrophyte"] <- "cryptophyte"
 
 ## Create new column detailing how many life form catergories have been entered in try for each species
-for (i in unique(lifeform$AccSpeciesName)){
-  lifeform$numberlifeforms[lifeform$AccSpeciesName ==i] <- length(unique(levels(factor(lifeform$raunk_lf[lifeform$AccSpeciesName ==i]))))
-}
-## pretty much all species are entered as only having 1 life form so not that usable as a variable
-length(unique(lifeform$AccSpeciesName[lifeform$numberlifeforms !=1]))
-length(unique(lifeform$AccSpeciesName[lifeform$numberlifeforms ==1]))
+# for (i in unique(lifeform$AccSpeciesName)){
+#   lifeform$numberlifeforms[lifeform$AccSpeciesName ==i] <- length(unique(levels(factor(lifeform$raunk_lf[lifeform$AccSpeciesName ==i]))))
+# }
+# ## pretty much all species are entered as only having 1 life form so not that usable as a variable
+# length(unique(lifeform$AccSpeciesName[lifeform$numberlifeforms !=1]))
+# length(unique(lifeform$AccSpeciesName[lifeform$numberlifeforms ==1]))
 #write_csv(lifeform, "Data_lifeform.csv")
 
 

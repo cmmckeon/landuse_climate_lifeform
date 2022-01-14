@@ -305,7 +305,7 @@ sum.df %>%
 
 # Table 5. Summary statistics for climatic variables
 ```{r}
-all_clim_ave <- readRDS("all_clim_ave.rds")
+all_clim_ave <- readRDS("Data_08_all_clim_ave.rds")
 opts <- options(knitr.kable.NA = "")
 sum.df <- as_tibble(all_clim_ave)
 
@@ -316,7 +316,7 @@ sum.df %>%
 
 # Table 6. Biome averages for climatic variables
 ```{r}
-biome <- readRDS("average_biome_clim_vars.rds")
+biome <- readRDS("Data_08_average_biome_clim_vars.rds")
 
 sum.df <- as_tibble(biome[,c(5,1:4)])
 
