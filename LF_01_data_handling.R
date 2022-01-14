@@ -335,7 +335,7 @@ hf <- raster("Data_01_wildareas-v3-2009-human-footprint-geotiff/wildareas-v3-200
 #   http://www.nickeubank.com/wp-content/uploads/2015/10/RGIS3_MakingMaps_part2_mappingRasterData.html 
 # https://rspatial.org/raster/spatial/8-rastermanip.html
 
-## Map human footprint dataa
+## Map human footprint dataa
 pal <- colorRampPalette(c('#0C276C', '#3B9088', '#EEFF00', '#ffffff'))
 hf_map <- calc(hf, fun=function(x){ x[x > 100] <- NA; return(x)} )
 par(bty = "n", mar=c(0.02,0.02,2,0.2))
