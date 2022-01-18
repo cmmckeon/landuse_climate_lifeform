@@ -482,16 +482,3 @@ full_clim$mat_var <- full_clim$mat_var/100
 ## get progress message
 print("***Model dataset created***")
 
-
-
-range(Data_ModelDF$mat)
-range(Data_ModelDF_unscaled$mat)
-
-range(Data_ModelDF$Species_richness)
-range(Data_ModelDF_unscaled$Species_richness)
-
-range(Data_ModelDF$mat_var)
-range(Data_ModelDF_unscaled$mat_var)
-
-
-
