@@ -454,6 +454,7 @@ ModelDF$raunk_lf <- factor(ModelDF$raunk_lf ,
                       levels = c("phanerophyte","chamaephyte", "hemicryptophyte", "cryptophyte", 
                                  "therophyte"))
 #saveRDS(ModelDF, "Data_ModelDF.rds")
+#saveRDS(ModelDF, "Data_ModelDF.rds")
 
 ## save unscaled information for getting raw climate values and averages later
 co <- unique(ModelDF %>% .[, which(names(.) %in% c("Longitude", "Latitude"))])
@@ -480,4 +481,17 @@ full_clim$mat_var <- full_clim$mat_var/100
 
 ## get progress message
 print("***Model dataset created***")
+
+
+
+range(Data_ModelDF$mat)
+range(Data_ModelDF_unscaled$mat)
+
+range(Data_ModelDF$Species_richness)
+range(Data_ModelDF_unscaled$Species_richness)
+
+range(Data_ModelDF$mat_var)
+range(Data_ModelDF_unscaled$mat_var)
+
+
 
