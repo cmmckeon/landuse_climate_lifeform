@@ -4,7 +4,7 @@
 # date: "01/07/2020"
 
 print("This is the frequentist percent cover model script")
-setwd("~/PREDICTS")
+setwd("~/landuse_climate_lifeform")
 
 
 ## Create model dataframe
