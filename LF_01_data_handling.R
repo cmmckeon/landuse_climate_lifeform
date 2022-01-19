@@ -474,6 +474,6 @@ ModelDF <- ModelDF[, which(names(ModelDF) %nin% c("map_unscaled", "map_var_unsca
 #        xlab = paste(i))
 # }
 
-## get progress message
+## get progress message 
 print("***Model dataset created***")
 
