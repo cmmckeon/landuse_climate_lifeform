@@ -453,16 +453,11 @@ ModelDF <- ModelDF[, which(names(ModelDF) %nin% c("pc_binary", "ab_binary", "oc_
 ModelDF$raunk_lf <- factor(ModelDF$raunk_lf , 
                       levels = c("phanerophyte","chamaephyte", "hemicryptophyte", "cryptophyte", 
                                  "therophyte"))
-#saveRDS(ModelDF, "Data_ModelDF.rds")
+#saveRDS(ModelDF, "Data_ModelDF_unscaled.rds")
+ModelDF <- ModelDF[, which(names(ModelDF) %nin% c("map_unscaled", "map_var_unscaled", 
+                                                  "Species_richness_unscaled", "mat_unscaled", "mat_var_unscaled"))]
 #saveRDS(ModelDF, "Data_ModelDF.rds")
 
-## save unscaled information for getting raw climate values and averages later
-co <- unique(ModelDF %>% .[, which(names(.) %in% c("Longitude", "Latitude"))])
-full_clim <- drop_na(data.frame(raster::extract(clim_map,co))) 
-names(full_clim) <- c("map", "mat", "map_var", "mat_var") 
-full_clim$mat <- full_clim$mat/10
-full_clim$mat_var <- full_clim$mat_var/100
-#saveRDS(full_clim, "unscaled_model_climate_data.rds")
 
 ## Quick look at model dataframe
 ## Factors
@@ -471,11 +466,11 @@ full_clim$mat_var <- full_clim$mat_var/100
 #        main = paste(i))
 # }
 # 
-# ## Numeric variables
+## Numeric variables
 # for (i in names(Filter(is.numeric, ModelDF))) {
-#   hist(ModelDF[,i], 
-#        breaks = 3000, 
-#        main = paste(i), 
+#   hist(ModelDF[,i],
+#        breaks = 3000,
+#        main = paste(i),
 #        xlab = paste(i))
 # }
 
