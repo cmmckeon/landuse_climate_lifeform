@@ -7,7 +7,7 @@
 #' # Set up
  print("This is the frequentist occurrence model script")
 
-setwd("~/PREDICTS")
+setwd("~/landuse_climate_lifeform")
 
 ## create "not in" operator
 '%nin%' = Negate('%in%')
@@ -40,17 +40,19 @@ mydata <- ModelDF
 mydata$animal <- mydata$Best_guess_binomial
 
 ## get taxomonic data for all species
-if(!exists("PR_oc")) {
-  if(file.exists("Data_03b_PR_f_oc.rds")) {
-    try(PR_oc <- readRDS("Data_03b_PR_f_oc.rds"))
-  } else try(
-    {PR <- readRDS("Data_PR_plantDiversityCorr.rds")
-    levels(PR$Best_guess_binomial) <- gsub(" ", "_", levels(PR$Best_guess_binomial))
-    PR <- PR[PR$Best_guess_binomial %in% mydata$Best_guess_binomial,]
-    PR_oc <- unique(PR[, which(names(PR) %in% c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus",
-                                                "Best_guess_binomial"))])
-    saveRDS(PR_oc, "Data_03b_PR_f_oc.rds")})
-}
+PR_oc <- readRDS("Data_03b_PR_f_oc.rds")
+
+# if(!exists("PR_oc")) {
+#   if(file.exists("Data_03b_PR_f_oc.rds")) {
+#     try(PR_oc <- readRDS("Data_03b_PR_f_oc.rds"))
+#   } else try(
+#     {PR <- readRDS("Data_PR_plantDiversityCorr.rds")
+#     levels(PR$Best_guess_binomial) <- gsub(" ", "_", levels(PR$Best_guess_binomial))
+#     PR <- PR[PR$Best_guess_binomial %in% mydata$Best_guess_binomial,]
+#     PR_oc <- unique(PR[, which(names(PR) %in% c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus",
+#                                                 "Best_guess_binomial"))])
+#     saveRDS(PR_oc, "Data_03b_PR_f_oc.rds")})
+# }
 
 mydata <- droplevels(merge(mydata, PR_oc, by = "Best_guess_binomial",all.x = TRUE)) 
 
