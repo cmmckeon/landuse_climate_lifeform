@@ -82,31 +82,31 @@ clim_map <- brick(map, mat, map_var, mat_var, biome_rast)
 full_clim <- data.frame(raster::extract(clim_map, y=seq(1,7776000,1), df=TRUE)) 
 
 full_clim <- unique(full_clim)
-new <- full_clim[,2:6]
-names(new) <- c("map", "mat", "map_var", "mat_var","biome") 
-new <- new[new$biome >= 1,]
-new <- drop_na(new)
-new$biome <- round(new$biome, 0)
+biome <- full_clim[,2:6]
+names(biome) <- c("map", "mat", "map_var", "mat_var","biome") 
+biome <- biome[biome$biome >= 1,]
+biome <- drop_na(biome)
+biome$biome <- round(biome$biome, 0)
 
 for (i in 1:12){
-  new$map[new$biome == i] <- mean(new$map[new$biome == i])
-  new$mat[new$biome == i] <- mean(new$mat[new$biome == i])
-  new$map_var[new$biome == i] <- mean(new$map_var[new$biome == i])
-  new$mat_var[new$biome == i] <- mean(new$mat_var[new$biome == i])
+  biome$map[biome$biome == i] <- mean(biome$map[biome$biome == i])
+  biome$mat[biome$biome == i] <- mean(biome$mat[biome$biome == i])
+  biome$map_var[biome$biome == i] <- mean(biome$map_var[biome$biome == i])
+  biome$mat_var[biome$biome == i] <- mean(biome$mat_var[biome$biome == i])
 }
 
-new <- unique(new)
+biome <- unique(biome)
 
 b <- c("Tropical Evergreen Woodland", "Tropical Deciduous Woodland", "Temperate Evergreen Woodland", "Temperate Deciduous Woodland", 
 "Boreal Woodland", "Mixed Woodland", "Savanna", "Grassland and Steppe", "Dense Shrubland", "Open Shrubland", "Tundra", "Deserts and Barren")
 
-new <- new[order(new$biome),]
-new$biome <- b
-new$mat_var <- new$mat_var/100
-new$mat <- new$mat/10
-for (i in names(Filter(is.numeric, new))) {
-new[,i] <- round(new[,i], 2)}
-new <- new[order(-new$mat),]
+biome <- biome[order(biome$biome),]
+biome$biome <- b
+biome$mat_var <- biome$mat_var/100
+biome$mat <- biome$mat/10
+for (i in names(Filter(is.numeric, biome))) {
+biome[,i] <- round(biome[,i], 2)}
+biome <- biome[order(-biome$mat),]
 
 biome$biome <- factor(biome$biome, 
                       levels = c("Tropical Evergreen Woodland", "Tropical Deciduous Woodland", 
@@ -115,7 +115,7 @@ biome$biome <- factor(biome$biome,
                                  "Grassland and Steppe", "Mixed Woodland", "Boreal Woodland", 
                                  "Tundra"))
 
-#saveRDS(new, "Data_08_average_biome_clim_vars.rds")
+#saveRDS(biome, "Data_08_average_biome_clim_vars.rds")
 ```
 
 ```{r}
@@ -143,26 +143,26 @@ clim_map <- brick(map, mat, map_var, mat_var, eco_rast)
 full_clim <- data.frame(raster::extract(clim_map, y=seq(1,7776000,1), df=TRUE)) 
 
 full_clim <- full_clim[which(!is.na(full_clim$ECO_NAME)),]
-new <- full_clim[,-1]
-new <- unique(new)
-names(new) <- c("map", "mat", "map_var", "mat_var","eco") 
-new <- drop_na(new)
+eco <- full_clim[,-1]
+eco <- unique(eco)
+names(eco) <- c("map", "mat", "map_var", "mat_var","eco") 
+eco <- drop_na(eco)
 
 #plot(eco_rast, col=viridis_pal(option="C")(900))
 
 for (i in 1:826){
   print(i)
-  new$map[new$eco == i] <- mean(new$map[new$eco == i])
-  new$mat[new$eco == i] <- mean(new$mat[new$eco == i])/10
-  new$map_var[new$eco == i] <- mean(new$map_var[new$eco == i])
-  new$mat_var[new$eco == i] <- mean(new$mat_var[new$eco == i])/100
+  eco$map[eco$eco == i] <- mean(eco$map[eco$eco == i])
+  eco$mat[eco$eco == i] <- mean(eco$mat[eco$eco == i])/10
+  eco$map_var[eco$eco == i] <- mean(eco$map_var[eco$eco == i])
+  eco$mat_var[eco$eco == i] <- mean(eco$mat_var[eco$eco == i])/100
 }
 
-new <- unique(new)
-new <- new[order(-new$mat),]
+eco <- unique(eco)
+eco <- eco[order(-eco$mat),]
 ## drops 17 ecoregions (too coastal I assume)
 
-#saveRDS(new, "Data_08_average_ecoregion_clim_vars.rds")
+#saveRDS(eco, "Data_08_average_ecoregion_clim_vars.rds")
 ```
 
 
@@ -247,12 +247,12 @@ for (i in names(Filter(is.numeric, eco_diff))) {
 
 get climate values used in model
 ```{r}
-unscaled_vars <- c("unscaled_map", "unscaled_mat", "unscaled_map_var", "unscaled_mat_var")
-data<- unscaled_data[,which(names(unscaled_data) %in% 
-                              c("unscaled_map", "unscaled_mat", "unscaled_map_var", "unscaled_mat_var"))]
-data<- data[,c("unscaled_map", "unscaled_mat", "unscaled_map_var", "unscaled_mat_var")]
-data$unscaled_mat <- data$unscaled_mat/10
-data$unscaled_mat_var <- data$unscaled_mat_var/100
+unscaled_vars <- c("map_unscaled", "mat_unscaled", "map_var_unscaled", "mat_var_unscaled")
+data <- unscaled_data[,which(names(unscaled_data) %in% 
+                              c("map_unscaled", "mat_unscaled", "map_var_unscaled", "mat_var_unscaled"))]
+data <- data[,c("map_unscaled", "mat_unscaled", "map_var_unscaled", "mat_var_unscaled")]
+data$mat_unscaled <- data$mat_unscaled/10
+data$mat_var_unscaled <- data$mat_var_unscaled/100
 names(data) <- vars
 ```
 
