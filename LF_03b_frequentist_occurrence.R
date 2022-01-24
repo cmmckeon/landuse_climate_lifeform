@@ -121,7 +121,7 @@ mydata$spp_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$Species
 
 print("start running model a")
 
-oc_wec_int_maximal_zi_1_nested_no_U_T <- glmmTMB(response ~ Predominant_habitat.wec + raunk_lf.wec + hab_raunk_interaction +
+oc_wec_int_maximal_zi_1_nested_no_U_T <- glmmTMB(pres_abs ~ Predominant_habitat.wec + raunk_lf.wec + hab_raunk_interaction +
                                     Species_richness +
                                     map +
                                     map_var +

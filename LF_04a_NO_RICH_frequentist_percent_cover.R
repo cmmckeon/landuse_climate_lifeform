@@ -4,7 +4,7 @@
 # date: "01/07/2020"
 
 print("This is the NO SPECIES RICHNESS frequentist percent cover model script")
-setwd("~/PREDICTS")
+setwd("~/landuse_climate_lifeform")
 
 
 ## Create model dataframe
@@ -50,17 +50,21 @@ mydata$Measurement <- mydata$Measurement/100
 mydata$response <- scale(logitTransform(mydata$Measurement))
 mydata$animal <- mydata$Best_guess_binomial
 
+
 ## get taxomonic data for all species
-if(!exists("PR_pc")) {
-  if(file.exists("Data_03a_PR_f_pc.rds")) {
-    try(PR_pc <- readRDS("Data_03a_PR_f_pc.rds"))
-  } else try(
-    {PR <- readRDS("Data_PR_plantDiversityCorr.rds")
-    levels(PR$Best_guess_binomial) <- gsub(" ", "_", levels(PR$Best_guess_binomial))
-    PR <- PR[PR$Best_guess_binomial %in% mydata$Best_guess_binomial,]
-    PR_pc <- unique(PR[, which(names(PR) %in% c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus",
-                                                "Best_guess_binomial"))])})
-}
+PR_pc <- readRDS("Data_03a_PR_f_pc.rds")
+
+# ## get taxomonic data for all species
+# if(!exists("PR_pc")) {
+#   if(file.exists("Data_03a_PR_f_pc.rds")) {
+#     try(PR_pc <- readRDS("Data_03a_PR_f_pc.rds"))
+#   } else try(
+#     {PR <- readRDS("Data_PR_plantDiversityCorr.rds")
+#     levels(PR$Best_guess_binomial) <- gsub(" ", "_", levels(PR$Best_guess_binomial))
+#     PR <- PR[PR$Best_guess_binomial %in% mydata$Best_guess_binomial,]
+#     PR_pc <- unique(PR[, which(names(PR) %in% c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus",
+#                                                 "Best_guess_binomial"))])})
+# }
 
 mydata <- droplevels(merge(mydata, PR_pc, by = "Best_guess_binomial",all.x = TRUE)) 
 
