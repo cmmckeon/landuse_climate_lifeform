@@ -18,7 +18,7 @@ library(gtools)
 logitTransform <- function(x) { log(x/(1-x)) }
 
 
-## read in models-------------------------------------------------------------------------------------------------------------------------------
+## read in models----------------------------------------------------------------------------------------------------
 if(!exists("f_mod")) {
   if(file.exists("f_pc_maximal_gauss_logit_nesting.rds")) {
     try(f_mod <- readRDS("f_pc_maximal_gauss_logit_nesting.rds"))

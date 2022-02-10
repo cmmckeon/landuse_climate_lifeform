@@ -194,31 +194,31 @@ sum.df %>%
 
 ## Table 3c. Range within effect sizes
 ```{r}
-d <- f_oc_sum[which(!is.na(f_oc_sum$landuse) & !is.na(f_oc_sum$raunk_lf)),]
-d$landuse <- factor(d$landuse)
-for(i in levels(d$landuse)){
-  d$land_range[d$landuse == i] <- max(d$eff_sz[d$landuse == i]) - min(d$eff_sz[d$landuse == i])
-}
-
-d <- unique(d[, c(9,16)])
-d <- d[order(d$land_range),]
-sum.df <- as_tibble(d)
-sum.df %>% 
-  kable(booktabs = T, caption = "Table 3c. Range in Effect size for Life form Occurrence by Land use") %>%
-  kable_styling(bootstrap_options = "striped", full_width = T) 
-
-c <- f_oc_sum[which(!is.na(f_oc_sum$raunk_lf) & f_oc_sum$clim != 0 & f_oc_sum$clim != "species richness")]
-c$clim<- factor(c$clim)
-for(i in levels(c$clim)){
-  c$clim_range[c$clim == i] <- max(c$eff_sz[c$clim == i]) - min(c$eff_sz[c$clim == i])
-}
-
-c <- unique(c[, c(11,16)])
-c <- c[order(c$clim_range),]
-sum.df <- as_tibble(c)
-sum.df %>% 
-  kable(booktabs = T, caption = "Table 3d. Range in Effect sizes for Life form Occurrence by Climate") %>%
-  kable_styling(bootstrap_options = "striped", full_width = T) 
+# d <- f_oc_sum[which(!is.na(f_oc_sum$landuse) & !is.na(f_oc_sum$raunk_lf)),]
+# d$landuse <- factor(d$landuse)
+# for(i in levels(d$landuse)){
+#   d$land_range[d$landuse == i] <- max(d$eff_sz[d$landuse == i]) - min(d$eff_sz[d$landuse == i])
+# }
+# 
+# d <- unique(d[, c(9,16)])
+# d <- d[order(d$land_range),]
+# sum.df <- as_tibble(d)
+# sum.df %>% 
+#   kable(booktabs = T, caption = "Table 3c. Range in Effect size for Life form Occurrence by Land use") %>%
+#   kable_styling(bootstrap_options = "striped", full_width = T) 
+# 
+# c <- f_oc_sum[which(!is.na(f_oc_sum$raunk_lf) & f_oc_sum$clim != 0 & f_oc_sum$clim != "species richness")]
+# c$clim<- factor(c$clim)
+# for(i in levels(c$clim)){
+#   c$clim_range[c$clim == i] <- max(c$eff_sz[c$clim == i]) - min(c$eff_sz[c$clim == i])
+# }
+# 
+# c <- unique(c[, c(11,16)])
+# c <- c[order(c$clim_range),]
+# sum.df <- as_tibble(c)
+# sum.df %>% 
+#   kable(booktabs = T, caption = "Table 3d. Range in Effect sizes for Life form Occurrence by Climate") %>%
+#   kable_styling(bootstrap_options = "striped", full_width = T) 
 
 g <- f_oc_sum[which(!is.na(f_oc_sum$landuse) & !is.na(f_oc_sum$raunk_lf)),]
 for(i in levels(g$raunk_lf)){
@@ -264,34 +264,34 @@ sum.df %>%
 
 ## Table 4c. Range within effect sizes
 ```{r}
-d <- f_pc_sum[which(!is.na(f_pc_sum$landuse) & !is.na(f_pc_sum$raunk_lf)& f_pc_sum$clim != "species richness"),]
-d$landuse <- factor(d$landuse)
-for(i in levels(d$landuse)){
-  d$land_range[d$landuse == i] <- max(d$eff_sz[d$landuse == i]) - min(d$eff_sz[d$landuse == i])
-}
-d <- unique(d[, c(8,17)])
-d <- d[order(d$land_range),]
-
-sum.df <- as_tibble(d)
-sum.df %>% 
-  kable(booktabs = T, caption = "Table 4c. Range in Effect size for Life form Abundance by Land use") %>%
-  kable_styling(bootstrap_options = "striped", full_width = T) 
-
-c <- f_pc_sum[which(!is.na(f_pc_sum$raunk_lf) & f_pc_sum$clim != 0 & f_pc_sum$clim != "species richness")]
-c$clim<- factor(c$clim)
-for(i in levels(c$clim)){
-  c$clim_range[c$clim == i] <- max(c$eff_sz[c$clim == i]) - min(c$eff_sz[c$clim == i])
-}
-c <- unique(c[, c(10,17)])
-c <- c[order(c$clim_range),]
-
-sum.df <- as_tibble(c)
-sum.df %>% 
-  kable(booktabs = T, caption = "Table 4d. Range in Effect sizes for Life form Abundance by Climate") %>%
-  kable_styling(bootstrap_options = "striped", full_width = T) 
+# d <- f_pc_sum[which(!is.na(f_pc_sum$landuse) & !is.na(f_pc_sum$raunk_lf)& f_pc_sum$clim != "species richness"),]
+# d$landuse <- factor(d$landuse)
+# for(i in levels(d$landuse)){
+#   d$land_range[d$landuse == i] <- max(d$eff_sz[d$landuse == i]) - min(d$eff_sz[d$landuse == i])
+# }
+# d <- unique(d[, c(8,17)])
+# d <- d[order(d$land_range),]
+# 
+# sum.df <- as_tibble(d)
+# sum.df %>% 
+#   kable(booktabs = T, caption = "Table 4c. Range in Effect size for Life form Abundance by Land use") %>%
+#   kable_styling(bootstrap_options = "striped", full_width = T) 
+# 
+# c <- f_pc_sum[which(!is.na(f_pc_sum$raunk_lf) & f_pc_sum$clim != 0 & f_pc_sum$clim != "species richness")]
+# c$clim<- factor(c$clim)
+# for(i in levels(c$clim)){
+#   c$clim_range[c$clim == i] <- max(c$eff_sz[c$clim == i]) - min(c$eff_sz[c$clim == i])
+# }
+# c <- unique(c[, c(10,17)])
+# c <- c[order(c$clim_range),]
+# 
+# sum.df <- as_tibble(c)
+# sum.df %>% 
+#   kable(booktabs = T, caption = "Table 4d. Range in Effect sizes for Life form Abundance by Climate") %>%
+#   kable_styling(bootstrap_options = "striped", full_width = T) 
 
 g <- f_pc_sum[which(!is.na(f_pc_sum$landuse) & !is.na(f_pc_sum$raunk_lf)& f_pc_sum$clim != "species richness"),]
-for(i in levels(g$raunk_lf)){s
+for(i in levels(g$raunk_lf)){
   g$raunk_lf_range[g$raunk_lf == i] <- max(g$eff_sz[g$raunk_lf == i]) - min(g$eff_sz[g$raunk_lf == i])
 }
 g <- unique(g[, c(9,17)])

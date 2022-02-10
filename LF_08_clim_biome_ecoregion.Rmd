@@ -26,7 +26,7 @@ library(ggeffects)
 library(gtools)
 library(ggridges)
 library(papeR)
-library(kableExtra)
+library(kableExtra) 
 library(viridis)
 library(gdalUtils)
 
@@ -128,13 +128,12 @@ biome <- readRDS("Data_08_average_biome_clim_vars.rds")
 ```{r eval=FALSE, include=FALSE}
 #eco <- shapefile("terr-ecoregions-TNC/tnc_terr_ecoregions.shp")
 
-teow <- readOGR(dsn = "Data_08_official", layer = "wwf_terr_ecos")
- x <- rasterize(teow, mat)
-# writeRaster(x, "teow.grd")
-x <-gdalUtils::gdal_rasterize(teow, mat)
-levels(x)
-a <- deratify(x, "ECO_NAME")
+# teow <- readOGR(dsn = "Data_08_official", layer = "wwf_terr_ecos")
+# x <- rasterize(teow, mat)
+# a <- raster::deratify(x, "ECO_NAME")
+
 #writeRaster(a, "Data_08_teow_econame.grd")
+
 eco_rast <- raster("Data_08_teow_econame.grd")
 
 clim_map <- brick(map, mat, map_var, mat_var, eco_rast)
@@ -143,7 +142,7 @@ clim_map <- brick(map, mat, map_var, mat_var, eco_rast)
 full_clim <- data.frame(raster::extract(clim_map, y=seq(1,7776000,1), df=TRUE)) 
 
 full_clim <- full_clim[which(!is.na(full_clim$ECO_NAME)),]
-eco <- full_clim[,-1]
+eco <- full_clim[,-1] 
 eco <- unique(eco)
 names(eco) <- c("map", "mat", "map_var", "mat_var","eco") 
 eco <- drop_na(eco)
@@ -317,46 +316,5 @@ for(i in names(eco_diff[,which(names(eco_diff) %in% vars)])){
 
 ```
 
-
-
-
-```{r eval=FALSE, include=FALSE}
-d <- data.frame(1)
-for(i in names(data[,which(names(data) %in% vars)])){
- d[1,i] <- sd(data[,i])
- d[2,i] <- mean(data[,i])
- d[3,i] <- median(data[,i])}
-d <- d[,-1]
-names(d) <- vars
-d <- rbind(c(rep(1,4)), d)
-#rownames(d) <- c("data", "sd", "mean", "median")
-
-b <- data.frame(1)
-for(i in names(biome_diff[,which(names(biome_diff) %in% vars)])){
- b[1,i] <- sd(biome_diff[,i])
- b[2,i] <- mean(biome_diff[,i])
- b[3,i] <- median(biome_diff[,i])}
-b<- b[,-1]
-names(b) <- vars
-b <- rbind(c(rep(1,4)), b)
-#rownames(b) <- c("biome", "sd", "mean", "median")
-
-e <- data.frame(1)
-for(i in names(eco_diff[,which(names(eco_diff) %in% vars)])){
- e[1,i] <- sd(eco_diff[,i])
- e[2,i] <- mean(eco_diff[,i])
- e[3,i] <- median(eco_diff[,i])}
-e<- e[,-1]
-names(e) <- vars
-e <- rbind(c(rep(1,4)), e)
-#rownames(e) <- c("ecoregion", "sd", "mean", "median")
-
-sum <- rbind(d,b,e)
-for (i in names(Filter(is.numeric, sum))) {
-  sum[,i] <- round(sum[,i], 2)}
-sum$rn <-c("Model data", "sd", "mean", "median","Biome", "sd", "mean", "median", "Ecoregion", "sd", "mean", "median")
-all_clim_ave <- sum[c(5,1:4)]
-#saveRDS(all_clim_ave, "Data_08_all_clim_ave.rds")
-```
 
 
