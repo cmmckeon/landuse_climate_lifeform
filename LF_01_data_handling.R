@@ -6,9 +6,9 @@
 ## to do:
 
 
-## This script is the cluster runnable version of 01_data_handling.Rmd, for obtaining, manipulating, cleaning and 
-## aggregating the data to be used in the modelling dataset for investigating the effects of Raunkiaerian Life Form on 
-## plant population responses to human land use. Also creates some overview plots
+## This is the cluster runnable script for obtaining, manipulating, cleaning and 
+## aggregating the data to be used in the modeling dataset for investigating how Raunkiaerian Life Form affects 
+## plant population responses to human land use and climate. Also creates some overview plots.
 
 ## DATA NEEDED:
 
@@ -28,11 +28,6 @@
 # bio12.bil ## mean annual precipatation (mm)
 # bio15.bil ## mean annual precip coeff variation
 # bio4.bil ## mean annual temp SD*100
-
-
-## shell commands for running on the cluster
-## ssh -l mckeonc2 lonsdale.tchpc.tcd.ie
-## password: 
 
 ## Set up
 #install.packages(c("tidyverse", "raster", "rgdal", "RColorBrewer"))
@@ -106,6 +101,7 @@ print("***Starting reading in trait lists***")
 # lifeform_bien <- BIEN_trait_traitbyspecies("whole plant growth form",species=sp.list_BIEN) ## 84206 obs of 13 vars
 # #saveRDS(lifeform_bien, "Data_lifeform_bien.rds")
 
+## or read back in
 lifeform_bien <-readRDS("Data_01_lifeform_bien.rds") ## 84205 obs of 13 vars
 ## there are about 300 species in this bien life form list absent from the PREDICTS list. 
 
@@ -131,7 +127,7 @@ trait_info_try <- trait_info_try[-1,]
 # 
 # lifeform_try_traitIDs <- cat(paste(lifeform_try_list$TraitID, collapse = ", "))
 
-## Get TRY species IDs to extract from database (OR use all TRY species with lifeform data available?)
+## Get TRY species IDs to extract from database (OR use all TRY species with lifeform data available)
 #cat(paste(sp.info_try$AccSpeciesID[sp.info_try$AccSpeciesName %in% sp.list_TRY], collapse = ", ")) 
 # Now request data corresponding to these lists from the TRY Dataportal on the website.
 # Then download and read in this data.
@@ -139,7 +135,7 @@ trait_info_try <- trait_info_try[-1,]
 ## get progress messages
 print("***Starting reading TRY life form data (large file)***")
 
-## Note VERY large file, takes for ever and sometimes hangs. Read in subsiquent premade datasets whenever possible.
+## Note VERY large file, takes for ever and sometimes hangs. Read in subsequent pre-made datasets whenever possible.
 lifeform_try <- read.delim("Data_01_lifeform_try.txt", quote = "")
 
 #names(lifeform_try)
@@ -168,18 +164,18 @@ lifeform_try <- lifeform_try[lifeform_try$TraitName %in% c("Plant growth form", 
 
 pgf <- lifeform_try[lifeform_try$TraitName == "Plant growth form",]
 pgl_raunk <- lifeform_try[lifeform_try$TraitName == "Plant life form (Raunkiaer life form)",]
-# saveRDS(pgl, "Data_try_Plant.growth.form.rds")
+# saveRDS(pgf, "Data_try_Plant.growth.form.rds")
 # saveRDS(pgl_raunk, "Data_try_Plant.growth.form.raunkiear.rds")
 
 ## Now see how the levels divide up between them
-pgl_raunk <-readRDS("Data_try_Plant.growth.form.raunkiear.rds") ##28634 obs of 28 vars
-pgf <- readRDS("Data_try_Plant.growth.form.Rds")
+#pgl_raunk <-readRDS("Data_try_Plant.growth.form.raunkiear.rds") ##28634 obs of 28 vars
+#pgf <- readRDS("Data_try_Plant.growth.form.Rds")
 # levels(factor(pgl$OrigValueStr)) ##1442
 # levels(factor(pgl_clonal$OrigValueStr)) ## 22
 # levels(factor(pgl_raunk$OrigValueStr)) ##144
 # levels(factor(pgl_moss$OrigValueStr)) ## 2
 
-## only "Plant growth form" and "Plant life form ((Raunkiaer life form)" have relevent levels.
+## only "Plant growth form" and "Plant life form ((Raunkiaer life form)" have relevant levels.
 ## lets see how many species' life forms we can get out of these with some cleaning
 
 ## Looking at the Raunkier life form trait
@@ -293,17 +289,6 @@ names(full_clim) <- c("map", "mat", "map_var", "mat_var","Longitude", "Latitude"
 plot(full_clim)
 #plot(clim_map)
 
-
-# Mapping locations I have data for
-# Try throw in a bit of transparency ect for emphasising spots with loads of records.
-# WorldData <- map_data('world')
-# ggplot(WorldData, aes(x=long, y=lat)) +
-#   geom_map(data=WorldData, map=WorldData,
-#            aes(x=long, y=lat, map_id=region),
-#            fill="white", colour="#7f7f7f")+ #, size=0.5)+
-#   geom_point(data=PR, aes(x=Longitude, y=Latitude), size=0.9, colour="red")
-
-
 ## Site diversity
 
 ## Read in site level diversity
@@ -386,7 +371,7 @@ names(full_humanfoot) <- c("humanfootprint_value","Longitude", "Latitude")
 ## than 100 before reprojecting)
 full_humanfoot <- full_humanfoot[full_humanfoot$humanfootprint_value <= 80,]
 
-## should now have df with (less than) 18824 (actually 4309) obs of 3 variables, corresponding to the 
+## should now have df with 3636 obs of 3 variables, corresponding to the 
 ## latitude and longtitude of the human footprint values to be used in modelling for PREDICTS data
 
 ## WOOOOOOO!
@@ -400,10 +385,11 @@ print("***Starting creating model dataset***")
 
 #Combine all datasets into one modelling dataframe
 
-ModelDF <- merge(PR, lifeform, by.x = "Best_guess_binomial", by.y = "AccSpeciesName", all.x = TRUE) ## 2450447 obs. of 19 vars
-ModelDF <- merge(ModelDF, Site_Div, by = "SSBS", all.x = TRUE) ## 2450447 obs. of 20 vars
-ModelDF <- merge(ModelDF, full_clim, by = c("Longitude","Latitude"), all.x = TRUE) ## 2450447 obs. of 24 vars
-ModelDF <- merge(ModelDF, full_humanfoot, by = c("Longitude","Latitude"), all.x = TRUE) ## 2450447 obs. of 25 vars
+ModelDF <- merge(PR, lifeform, by.x = "Best_guess_binomial", by.y = "AccSpeciesName", all.x = TRUE) 
+ModelDF <- unique(ModelDF)
+ModelDF <- merge(ModelDF, Site_Div, by = "SSBS", all.x = TRUE) 
+ModelDF <- merge(ModelDF, full_clim, by = c("Longitude","Latitude"), all.x = TRUE) 
+ModelDF <- merge(ModelDF, full_humanfoot, by = c("Longitude","Latitude"), all.x = TRUE) 
 ModelDF <- unique(ModelDF)
 
 ## Find and remove all NA containing rows from dataframe

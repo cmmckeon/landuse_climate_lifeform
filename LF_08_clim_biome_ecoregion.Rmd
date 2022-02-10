@@ -128,12 +128,12 @@ biome <- readRDS("Data_08_average_biome_clim_vars.rds")
 ```{r eval=FALSE, include=FALSE}
 #eco <- shapefile("terr-ecoregions-TNC/tnc_terr_ecoregions.shp")
 
-# teow <- readOGR(dsn = "Data_08_official", layer = "wwf_terr_ecos")
-# # x <- rasterize(teow, mat)
-# # writeRaster(x, "teow.grd")
-# x <-gdalUtils::gdal_rasterize(teow, mat)
-# levels(x)
-# a <- deratify(x, "ECO_NAME")
+teow <- readOGR(dsn = "Data_08_official", layer = "wwf_terr_ecos")
+ x <- rasterize(teow, mat)
+# writeRaster(x, "teow.grd")
+x <-gdalUtils::gdal_rasterize(teow, mat)
+levels(x)
+a <- deratify(x, "ECO_NAME")
 #writeRaster(a, "Data_08_teow_econame.grd")
 eco_rast <- raster("Data_08_teow_econame.grd")
 

@@ -2,9 +2,16 @@
 #' title: "LF_04b_NO_RICH_frequentist_occurrence.R"
 #' output: word_document
 #' ---
-#' 
-#' 
-#' # Set up
+
+## DATA NEEDED:
+
+# Data_ModelDF.rds  - Model dataframe with 624696 obs of 24 variables, created in LF_01_data_handling.R
+# Data_03b_PR_f_oc.rds - Taxonomy for the occurrence species, created in LF_03b_frequentist_occurrence.R
+# Data_01_PR_plantDiversityCorr.rds  - plant data from PREDICTS project: a global dataset of local biodiversity responses to land-use (Hudson et al., 2016)
+## obtained from PREDICTS team in 2017. Needed to create the taxonomy
+
+
+# Set up
 print("This is the NO RICH frequentist occurrence model script")
 
 setwd("~/landuse_climate_lifeform")
@@ -31,10 +38,9 @@ if(!exists("ModelDF")) {
   if(file.exists("Data_ModelDF.rds")) {
     try(ModelDF <- readRDS("Data_ModelDF.rds")) }
   else source("LF_01_data_handling.R")
-} ## 02/09/2020 624696 obs of 25 vars, unique, continous vars are scaled
+} ## 02/09/2020 624696 obs of 24 vars, unique, continous vars are scaled
 
 
-## ---------------------------------------------------------------------------------------------------------------------------------------
 ## handle model dataframe to get just percent cover data, with species levels in the right format
 levels(ModelDF$Best_guess_binomial) <- gsub(" ", "_", levels(ModelDF$Best_guess_binomial))
 mydata <- ModelDF
@@ -93,7 +99,6 @@ mydata$mat_var_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$mat
 
 #' ## ----oc_maximal--------------------------------------------------------------------------------------------
 # oc_maximal_zi <- glmmTMB(pres_abs ~ Predominant_habitat*raunk_lf +
-#                                  humanfootprint_value +
 #                                  Species_richness +
 #                                  map +
 #                                  map_var +
@@ -104,7 +109,6 @@ mydata$mat_var_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$mat
 #                                  map:raunk_lf +
 #                                  mat_var:raunk_lf +
 #                                  mat:raunk_lf +
-#                                  humanfootprint_value:raunk_lf +
 #                            (1|Best_guess_binomial) +
 #                            (1|SS), # +
 #                            # (1|SSS) +
@@ -159,30 +163,30 @@ mydata$map_var_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$map
 mydata$mat_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$mat)
 mydata$mat_var_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$mat_var)
 
-print("start running model b")
-oc_wec_NO_RICH_int_maximal_zi_1_nested_no_PF_P <- glmmTMB(pres_abs ~ Predominant_habitat.wec + raunk_lf.wec + hab_raunk_interaction +
-                                                    map +
-                                                    map_var +
-                                                    mat +
-                                                    mat_var +
-                                                    map_raunk_interaction +
-                                                    map_var_raunk_interaction +
-                                                    mat_raunk_interaction +
-                                                    mat_var_raunk_interaction +
-                                                    (1|Best_guess_binomial) +
-                                                    (1|SS) +
-                                                    (1|Class/Order/Family/Genus),
-                                                  ziformula= ~ 1,
-                                                  family = binomial,
-                                                  control = glmmTMBControl(optCtrl = list(iter.max = 10000, eval.max = 10000),
-                                                                           profile = FALSE, collect = FALSE),
-                                                  data = mydata)
-
-if(exists("oc_wec_NO_RICH_int_maximal_zi_1_nested_no_PF_P")) {
-  try(saveRDS(oc_wec_NO_RICH_int_maximal_zi_1_nested_no_PF_P, "oc_wec_NO_RICH_int_maximal_zi_1_nested_no_PF_P.rds"))
-} else warning("oc_wec_NO_RICH_int_maximal_zi_1_nested_no_PF_P failed to run")
-
-print("ran model omitting Primary forest and phanerophte, now running model omitting Pasture and cryptophyte")
+# print("start running model b")
+# oc_wec_NO_RICH_int_maximal_zi_1_nested_no_PF_P <- glmmTMB(pres_abs ~ Predominant_habitat.wec + raunk_lf.wec + hab_raunk_interaction +
+#                                                     map +
+#                                                     map_var +
+#                                                     mat +
+#                                                     mat_var +
+#                                                     map_raunk_interaction +
+#                                                     map_var_raunk_interaction +
+#                                                     mat_raunk_interaction +
+#                                                     mat_var_raunk_interaction +
+#                                                     (1|Best_guess_binomial) +
+#                                                     (1|SS) +
+#                                                     (1|Class/Order/Family/Genus),
+#                                                   ziformula= ~ 1,
+#                                                   family = binomial,
+#                                                   control = glmmTMBControl(optCtrl = list(iter.max = 10000, eval.max = 10000),
+#                                                                            profile = FALSE, collect = FALSE),
+#                                                   data = mydata)
+# 
+# if(exists("oc_wec_NO_RICH_int_maximal_zi_1_nested_no_PF_P")) {
+#   try(saveRDS(oc_wec_NO_RICH_int_maximal_zi_1_nested_no_PF_P, "oc_wec_NO_RICH_int_maximal_zi_1_nested_no_PF_P.rds"))
+# } else warning("oc_wec_NO_RICH_int_maximal_zi_1_nested_no_PF_P failed to run")
+# 
+# print("ran model omitting Primary forest and phanerophte, now running model omitting Pasture and cryptophyte")
 
 print("configure contrasts for model c")
 ## main effects

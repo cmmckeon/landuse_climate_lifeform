@@ -1,11 +1,18 @@
 #' ---
-#' title: "LF_04a_frequentist_percent_cover.R"
+#' title: "LF_03a_frequentist_percent_cover.R"
 # author: "Caroline McKeon"
 # date: "01/07/2020"
 
+## DATA NEEDED:
+
+# Data_ModelDF.rds  - Model dataframe with 624696 obs of 24 variables, created in LF_01_data_handling.R
+# Data_03a_PR_f_pc.rds - Taxonomy for the percent cover species, created in lines 50 - 60 of this script
+# Data_01_PR_plantDiversityCorr.rds  - plant data from PREDICTS project: a global dataset of local biodiversity responses to land-use (Hudson et al., 2016)
+## obtained from PREDICTS team in 2017. Needed to create the taxonomy
+
+
 print("This is the frequentist percent cover model script")
 setwd("~/landuse_climate_lifeform")
-
 
 ## Create model dataframe
 #source("LF_01_data_handling.R")
@@ -16,12 +23,7 @@ library(lme4)
 library(optimx) 
 library(glmmTMB)
 library(wec)
-# library("MuMIn")
-#install.packages("sjPlot")
-# library(sjPlot)
-# library(effects)
-#install.packages("see")
-# library("see") 
+
 ## create "not in" operator
 '%nin%' = Negate('%in%')
 ## create logit transformation function
@@ -32,9 +34,8 @@ if(!exists("ModelDF")) {
   if(file.exists("Data_ModelDF.rds")) {
     try(ModelDF <- readRDS("Data_ModelDF.rds")) }
   else source("LF_01_data_handling.R")
-} ## 02/09/2020 624696 obs of 25 vars, unique, continous vars are scaled
+} ## 02/09/2020 624696 obs of 24 vars, unique, continuous vars are scaled
 
-## ---------------------------------------------------------------------------------------------------------------------------------------
 ## handle model dataframe to get just percent cover data, with species levels in the right format
 levels(ModelDF$Best_guess_binomial) <- gsub(" ", "_", levels(ModelDF$Best_guess_binomial))
 
@@ -52,7 +53,7 @@ PR_pc <- readRDS("Data_03a_PR_f_pc.rds")
 #   if(file.exists("Data_03a_PR_f_pc.rds")) {
 #     try(PR_pc <- readRDS("Data_03a_PR_f_pc.rds"))
 #   } else try(
-#     {PR <- readRDS("Data_PR_plantDiversityCorr.rds")
+#     {PR <- readRDS("Data_01_PR_plantDiversityCorr.rds")
 #     levels(PR$Best_guess_binomial) <- gsub(" ", "_", levels(PR$Best_guess_binomial))
 #     PR <- PR[PR$Best_guess_binomial %in% mydata$Best_guess_binomial,]
 #     PR_pc <- unique(PR[, which(names(PR) %in% c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus",
@@ -62,7 +63,7 @@ PR_pc <- readRDS("Data_03a_PR_f_pc.rds")
 
 mydata <- droplevels(merge(mydata, PR_pc, by = "Best_guess_binomial",all.x = TRUE)) 
 
-## set up for weighted effects coding
+## set up for weighted effects coding ---------------
 
 print("configure contrasts for model a")
 
@@ -105,7 +106,6 @@ mydata$spp_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$Species
 
 #' ## ----pc_maximal_beta,--------------------------------------------------------------------------------------------
 # pc_maximal_beta <- glmmTMB(Measurement ~ Predominant_habitat*raunk_lf +
-#                           humanfootprint_value +
 #                           Species_richness +
 #                           map +
 #                           map_var +
@@ -116,8 +116,6 @@ mydata$spp_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$Species
 #                           map:raunk_lf +
 #                           mat_var:raunk_lf +
 #                           mat:raunk_lf +
-#                           humanfootprint_value:raunk_lf +
-#
 #                    (1|Best_guess_binomial) +
 #                    (1|SS), family = beta_family,
 #                    data = mydata)
@@ -127,7 +125,7 @@ mydata$spp_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$Species
 # } else warning("pc_maximal_beta failed to run")
 #'
 #'
-#' ## ----pc_maximal_gaussian_logit--------------------------------------------------------------------------------------------
+## ----a_pc_maximal_gaussian_logit--------------------------------------------------------------------------------------------
 print("start running model a")
 
 pc_wec_int_maximal_gauss_logit_nesting_no_U_T <- lmer(response ~ Predominant_habitat.wec + raunk_lf.wec + hab_raunk_interaction +
@@ -152,7 +150,7 @@ if(exists("pc_wec_int_maximal_gauss_logit_nesting_no_U_T")) {
 
 print("ran model omitting Urban or therophyte, now running model omitting Primary forest and phanerophte")
 
-#' ## ----pc_maximal_gaussian_logit--------------------------------------------------------------------------------------------
+## ----b_pc_maximal_gaussian_logit--------------------------------------------------------------------------------------------
 print("configure contrasts for model b")
 
 ## main effects
@@ -193,7 +191,7 @@ if(exists("pc_wec_int_maximal_gauss_logit_nesting_no_PF_P")) {
 
 print("ran model omitting Primary forest and phanerophte, now running model ommitting Pasture and cryptophyte")
 
-#' ## ----pc_maximal_gaussian_logit--------------------------------------------------------------------------------------------
+## ----c_pc_maximal_gaussian_logit--------------------------------------------------------------------------------------------
 print("configure contrasts for model c")
 
 ## main effects

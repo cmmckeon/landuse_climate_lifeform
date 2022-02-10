@@ -6,9 +6,20 @@ output:
   word_document: default
 ---
 
+## DATA NEEDED:
+
+# Data_ModelDF.rds  - Model dataframe with 624696 obs of 24 variables, created in LF_01_data_handling.R
+# Data_ModelDF_unscaled.rds  - Model dataframe with 624696 obs of 24 variables, created in LF_01_data_handling.R
+
+## the three weighted effects coding models for the percent cover data, created in LF_03a_frequentist_percent_cover.R
+# f_pc_wec_int_maximal_gauss_logit_nesting_no_P_C.rds
+# f_pc_wec_int_maximal_gauss_logit_nesting_no_PF_P.rds
+# f_pc_wec_int_maximal_gauss_logit_nesting_no_U_T.rds
+
+
+
 ## set up 
 ```{r set up, echo=FALSE}
-library(DHARMa)
 library(glmmTMB)
 library(lme4)
 library(data.table)
@@ -69,27 +80,6 @@ unscaled_data$response <- scale(logitTransform(unscaled_data$Measurement))
 unscaled_data$animal <- unscaled_data$Best_guess_binomial
 
 unscaled_data <- droplevels(merge(unscaled_data, PR_pc, by = "Best_guess_binomial",all.x = TRUE)) 
-```
-
-```{r plotting themes}
-# blank theme
-set_theme(
-  base = theme_classic(),
-  axis.title.size = 2,
-  axis.textsize = 1.2,
-  legend.size = 2,
-  legend.title.size = 2,
-  geom.label.size = 3,
-  plot.margin = margin(3, 5, 1, 5, "pt")
-)
-
-## text editing
-get_wraper <- function(width) {
-  function(x) {
-    lapply(strwrap(x, width = width, simplify = FALSE), paste, collapse="\n")}}
-## colour palett
-cb_pal <- c("#01665e", "#5ab4ac","#c7eae5", "#d8b365", 
-            "#8c510a")
 ```
 
 
@@ -185,7 +175,7 @@ f_pc_sum <- f_pc_sum[order(-f_pc_sum$raunk_lf, f_pc_sum$landuse),]
 ```
 
 
-```{r wec int a handle labling and tidy format pc, eval=FALSE, include=FALSE}
+```{r wec int a handle labling and tidy format pc}
 f_mod_a <- readRDS("f_pc_wec_int_maximal_gauss_logit_nesting_no_U_T.rds")
 f_pc_sum_a <- as.data.frame(summary(f_mod_a)[["coefficients"]])
 f_pc_sum_a <- setDT(f_pc_sum_a, keep.rownames = TRUE)[]
@@ -256,7 +246,7 @@ f_pc_sum_a <- f_pc_sum_a[order(-f_pc_sum_a$raunk_lf, f_pc_sum_a$landuse),]
 
 ```
 
-```{r wec int b handle labling and tidy format pc, eval=FALSE, include=FALSE}
+```{r wec int b handle labling and tidy format pc}
 f_mod_b <- readRDS("f_pc_wec_int_maximal_gauss_logit_nesting_no_PF_P.rds")
 f_pc_sum_b <- as.data.frame(summary(f_mod_b)[["coefficients"]])
 f_pc_sum_b <- setDT(f_pc_sum_b, keep.rownames = TRUE)[]
@@ -317,7 +307,7 @@ f_pc_sum_b <- f_pc_sum_b[order(-f_pc_sum_b$raunk_lf, f_pc_sum_b$landuse),]
 
 ```
 
-```{r wec int c handle labling and tidy format pc, eval=FALSE, include=FALSE}
+```{r wec int c handle labling and tidy format pc}
 f_mod_c <- readRDS("f_pc_wec_int_maximal_gauss_logit_nesting_no_P_C.rds")
 f_pc_sum_c <- as.data.frame(summary(f_mod_c)[["coefficients"]])
 f_pc_sum_c <- setDT(f_pc_sum_c, keep.rownames = TRUE)[]
@@ -378,20 +368,8 @@ f_pc_sum_c <- f_pc_sum_c[order(-f_pc_sum_c$raunk_lf, f_pc_sum_c$landuse),]
 
 ```
 
-```{r, eval=FALSE, include=FALSE}
+```{r}
 f_pc_sum <- unique(rbind(f_pc_sum_a, f_pc_sum_b, f_pc_sum_c))
-f_pc_sum$Estimate <- round(f_pc_sum$Estimate, 4)
-f_pc_sum$Std.Error <- round(f_pc_sum$Std.Error, 4)
-f_pc_sum$`t value` <- round(f_pc_sum$`t value`, 4)
-f_pc_sum$eff_sz <- round(f_pc_sum$eff_sz, 4)
-f_pc_sum$ci <- round(f_pc_sum$ci, 4)
-f_pc_sum <- unique(f_pc_sum)
-```
-
-```{r, eval=FALSE, include=FALSE}
-## now get average values, for cells where rounding to 4 decimal places did not create the exact same values
-## average over the same rns
-## but for now cheat and drop to 3
 f_pc_sum$Estimate <- round(f_pc_sum$Estimate, 3)
 f_pc_sum$Std.Error <- round(f_pc_sum$Std.Error, 3)
 f_pc_sum$`t value` <- round(f_pc_sum$`t value`, 3)
@@ -423,12 +401,12 @@ f_pc_sum$`t value`[f_pc_sum$rn == "Predominant_habitat.wecUrban"] <- mean(
 f_pc_sum$`t value`[f_pc_sum$rn == "raunk_lf.wecphanerophyte"] <- mean(
   f_pc_sum$`t value`[f_pc_sum$rn == "raunk_lf.wecphanerophyte"])
 
-f_pc_sum <- unique(f_pc_sum)
+f_pc_sum <- unique(f_pc_sum) ## 90 obs of 10 vars
 ```
 
 
-make the column for the histogram
-```{r eval=FALSE, include=FALSE}
+make the column for the histograms which will be needed for nice graphs
+```{r}
 for(i in levels(f_pc_sum$landuse)){
 f_pc_sum$luN[f_pc_sum$landuse == i] <- 
   length(mydata$Predominant_habitat[mydata$Predominant_habitat == i])}

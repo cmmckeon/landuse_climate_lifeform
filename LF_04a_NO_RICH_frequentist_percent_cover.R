@@ -3,6 +3,15 @@
 # author: "Caroline McKeon"
 # date: "01/07/2020"
 
+
+## DATA NEEDED:
+
+# Data_ModelDF.rds  - Model dataframe with 624696 obs of 24 variables, created in LF_01_data_handling.R
+# Data_03a_PR_f_pc.rds - Taxonomy for the percent cover species, created LF_03a_frequentist_percent_cover.R
+# Data_01_PR_plantDiversityCorr.rds  - plant data from PREDICTS project: a global dataset of local biodiversity responses to land-use (Hudson et al., 2016)
+## obtained from PREDICTS team in 2017. Needed to create the taxonomy
+
+
 print("This is the NO SPECIES RICHNESS frequentist percent cover model script")
 setwd("~/landuse_climate_lifeform")
 
@@ -10,23 +19,14 @@ setwd("~/landuse_climate_lifeform")
 ## Create model dataframe
 #source("LF_01_data_handling.R")
 
-## Create phylogeny 
-#source("LF_01b_phylogeny.R")
-
 
 ## Setup---------------------------------------------------------------------------------------------------------------
 library(tidyverse)
 library(lme4)
-#library(DHARMa)
 library(optimx) 
 library(glmmTMB)
 library(wec)
-# library("MuMIn")
-#install.packages("sjPlot")
-# library(sjPlot)
-# library(effects)
-#install.packages("see")
-# library("see") 
+
 ## create "not in" operator
 '%nin%' = Negate('%in%')
 ## create logit transformation function
@@ -37,9 +37,8 @@ if(!exists("ModelDF")) {
   if(file.exists("Data_ModelDF.rds")) {
     try(ModelDF <- readRDS("Data_ModelDF.rds")) }
   else source("LF_01_data_handling.R")
-} ## 02/09/2020 624696 obs of 25 vars, unique, continous vars are scaled
+} ## 02/09/2020 624696 obs of 24 vars, unique, continuous vars are scaled
 
-## ---------------------------------------------------------------------------------------------------------------------------------------
 ## handle model dataframe to get just percent cover data, with species levels in the right format
 levels(ModelDF$Best_guess_binomial) <- gsub(" ", "_", levels(ModelDF$Best_guess_binomial))
 
@@ -108,9 +107,7 @@ mydata$mat_var_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$mat
 # } else warning("pc_null_gauss_logit failed to run")
 #
 
-#'
-#'
-#' ## ----pc_maximal_gaussian_logit--------------------------------------------------------------------------------------------
+## ----a_pc_maximal_gaussian_logit--------------------------------------------------------------------------------------------
 print("start running model a")
 
 pc_wec_NO_RICH_int_maximal_gauss_logit_nesting_no_U_T <- lmer(response ~ Predominant_habitat.wec + raunk_lf.wec + hab_raunk_interaction +
@@ -133,7 +130,7 @@ if(exists("pc_wec_NO_RICH_int_maximal_gauss_logit_nesting_no_U_T")) {
 
 print("ran model omitting Urban or therophyte, now running model omitting Primary forest and phanerophte")
 
-#' ## ----pc_maximal_gaussian_logit--------------------------------------------------------------------------------------------
+## ----b_pc_maximal_gaussian_logit--------------------------------------------------------------------------------------------
 print("configure contrasts for model b")
 
 ## main effects
@@ -171,7 +168,7 @@ if(exists("pc_wec_NO_RICH_int_maximal_gauss_logit_nesting_no_PF_P")) {
 
 print("ran model omitting Primary forest and phanerophte, now running model ommitting Pasture and cryptophyte")
 
-#' ## ----pc_maximal_gaussian_logit--------------------------------------------------------------------------------------------
+## ----c_pc_maximal_gaussian_logit--------------------------------------------------------------------------------------------
 print("configure contrasts for model c")
 
 ## main effects

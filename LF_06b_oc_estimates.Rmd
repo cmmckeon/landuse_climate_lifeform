@@ -10,10 +10,19 @@ output: word_document
 -	In this analysis, the model estimates (real world means) are different from predicted values. This implies that random effects, such as location, species and taxonomy, are important in influencing occurrence and abundance. 
 -	I think we are more interested in occurrence and abundance patterns in the real world, rather than what changes we might see in a generic situation where we have excluded the influence of potentially biologically meaningful site specific and taxonomic effects.
 
+## DATA NEEDED:
+
+# Data_ModelDF.rds  - Model dataframe with 624696 obs of 24 variables, created in LF_01_data_handling.R
+# Data_ModelDF_unscaled.rds  - Model dataframe with 624696 obs of 24 variables, created in LF_01_data_handling.R
+
+## the three weighted effects coding models for the occurrence data, created in LF_03b_frequentist_occurrence.R
+# oc_wec_int_maximal_zi_1_nested_no_P_C.rds
+# oc_wec_int_maximal_zi_1_nested_no_PF_P_C.rds
+# oc_wec_int_maximal_zi_1_nested_no_U_T.rds
+
 
 ## set up 
 ```{r set up, echo=FALSE}
-library(DHARMa)
 library(glmmTMB)
 library(lme4)
 library(data.table)
@@ -58,7 +67,7 @@ mydata <- ModelDF
 levels(ModelDF$Best_guess_binomial) <- gsub(" ", "_", levels(ModelDF$Best_guess_binomial))
 mydata$animal <- mydata$Best_guess_binomial
 
-PR_oc <- readRDS("Data_PR_f_oc.rds")
+PR_oc <- readRDS("Data_03b_PR_f_oc.rds")
 mydata <- droplevels(merge(mydata, PR_oc, by = "Best_guess_binomial",all.x = TRUE)) 
 
 unscaled_data <- ModelDF_unscaled
@@ -79,28 +88,6 @@ for (i in levels(mydata$Predominant_habitat)){
 for (i in levels(mydata$raunk_lf)){
   print(c(i, length(mydata$raunk_lf[mydata$raunk_lf == i])))
 }
-```
-
-
-```{r plotting themes}
-# blank theme
-set_theme(
-  base = theme_classic(),
-  axis.title.size = 2,
-  axis.textsize = 1.2,
-  legend.size = 2,
-  legend.title.size = 2,
-  geom.label.size = 3,
-  plot.margin = margin(3, 5, 1, 5, "pt")
-)
-
-## text editing
-get_wraper <- function(width) {
-  function(x) {
-    lapply(strwrap(x, width = width, simplify = FALSE), paste, collapse="\n")}}
-## colour palett
-cb_pal <- c("#01665e", "#5ab4ac","#c7eae5", "#d8b365", 
-            "#8c510a")
 ```
 
 
@@ -187,8 +174,8 @@ f_oc_sum <- f_oc_sum[order(-f_oc_sum$raunk_lf, f_oc_sum$landuse),]
 ```
 
 
-```{r tidy oc wec a, eval=FALSE, include=FALSE}
-f_mod_a <- readRDS("f_oc_wec_int_maximal_zi_1_nested_no_P_C.rds")
+```{r tidy oc wec a}
+f_mod_a <- readRDS("oc_wec_int_maximal_zi_1_nested_no_P_C.rds")
 f_oc_sum_a <- summary(f_mod_a)[["coefficients"]]
 f_oc_sum_a <- f_oc_sum_a[c("cond","zi")]
 f_oc_sum_a <- as.data.frame(f_oc_sum_a[["cond"]])
@@ -251,8 +238,8 @@ f_oc_sum_a$landuse <- factor(f_oc_sum_a$landuse,
 f_oc_sum_a <- f_oc_sum_a[order(-f_oc_sum_a$raunk_lf, f_oc_sum_a$landuse),]
 ```
 
-```{r tidy oc wec b, eval=FALSE, include=FALSE}
-f_mod_b <- readRDS("f_oc_wec_int_maximal_zi_1_nested_no_PF_P.rds")
+```{r tidy oc wec b}
+f_mod_b <- readRDS("oc_wec_int_maximal_zi_1_nested_no_PF_P.rds")
 f_oc_sum_b <- summary(f_mod_b)[["coefficients"]]
 f_oc_sum_b <- f_oc_sum_b[c("cond","zi")]
 f_oc_sum_b <- as.data.frame(f_oc_sum_b[["cond"]])
@@ -315,8 +302,8 @@ f_oc_sum_b$landuse <- factor(f_oc_sum_b$landuse,
 f_oc_sum_b <- f_oc_sum_b[order(-f_oc_sum_b$raunk_lf, f_oc_sum_b$landuse),]
 ```
 
-```{r tidy oc wec c, eval=FALSE, include=FALSE}
-f_mod_c <- readRDS("f_oc_wec_int_maximal_zi_1_nested_no_U_T.rds")
+```{r tidy oc wec c}
+f_mod_c <- readRDS("oc_wec_int_maximal_zi_1_nested_no_U_T.rds")
 f_oc_sum_c <- summary(f_mod_c)[["coefficients"]]
 f_oc_sum_c <- f_oc_sum_c[c("cond","zi")]
 f_oc_sum_c <- as.data.frame(f_oc_sum_c[["cond"]])
@@ -381,19 +368,159 @@ f_oc_sum_c <- f_oc_sum_c[order(-f_oc_sum_c$raunk_lf, f_oc_sum_c$landuse),]
 
 ```{r, eval=FALSE, include=FALSE}
 f_oc_sum <- unique(rbind(f_oc_sum_a, f_oc_sum_b, f_oc_sum_c))
-f_oc_sum$Estimate <- round(f_oc_sum$Estimate, 2)
-f_oc_sum$Std.Error <- round(f_oc_sum$Std.Error, 2)
-f_oc_sum$`z value` <- round(f_oc_sum$`z value`, 1)
-f_oc_sum$`Pr(>|z|)` <- round(f_oc_sum$`Pr(>|z|)`, 2)
-f_oc_sum$eff_sz <- round(f_oc_sum$eff_sz, 2)
-f_oc_sum$ci <- round(f_oc_sum$ci, 2)
+
+f_oc_sum$Estimate <- round(f_oc_sum$Estimate, 3)
+f_oc_sum$Std.Error <- round(f_oc_sum$Std.Error, 3)
+f_oc_sum$`z value` <- round(f_oc_sum$`z value`, 3)
+f_oc_sum$`Pr(>|z|)` <- round(f_oc_sum$`Pr(>|z|)`, 3)
+f_oc_sum$eff_sz <- round(f_oc_sum$eff_sz, 3)
+f_oc_sum$ci <- round(f_oc_sum$ci, 3)
 f_oc_sum <- unique(f_oc_sum)
 ```
 
-quick cheat for knitting plots
+
 ```{r}
-#saveRDS(f_oc_sum, "f_oc_sum.rds")
-f_oc_sum <- readRDS("f_oc_sum.rds")
+#get average of estimates that differ at the 3rd decimal place
+f_oc_sum$`z value`[f_oc_sum$rn == "(Intercept)"] <- mean(f_oc_sum$`z value`[f_oc_sum$rn == "(Intercept)"])
+f_oc_sum$`z value`[f_oc_sum$rn == "hab_raunk_interactionx1Cropland:x2therophyte"] <- mean(f_oc_sum$`z value`[f_oc_sum$rn == "hab_raunk_interactionx1Cropland:x2therophyte"])
+
+f_oc_sum$`z value`[f_oc_sum$rn == "hab_raunk_interactionx1Intermediate secondary vegetation:x2chamaephyte"] <-
+  mean(f_oc_sum$`z value`[f_oc_sum$rn == "hab_raunk_interactionx1Intermediate secondary vegetation:x2chamaephyte"])
+
+f_oc_sum$`z value`[f_oc_sum$rn == "hab_raunk_interactionx1Intermediate secondary vegetation:x2hemicryptophyte"] <-
+  mean(f_oc_sum$`z value`[f_oc_sum$rn == "hab_raunk_interactionx1Intermediate secondary vegetation:x2hemicryptophyte"])
+
+f_oc_sum$`z value`[f_oc_sum$rn == "	
+hab_raunk_interactionx1Mature secondary vegetation:x2phanerophyte"] <- mean(
+  f_oc_sum$`z value`[f_oc_sum$rn == "	
+hab_raunk_interactionx1Mature secondary vegetation:x2phanerophyte"])
+
+f_oc_sum$`z value`[f_oc_sum$rn == "	
+hab_raunk_interactionx1Pasture:x2chamaephyte"] <- mean(
+  f_oc_sum$`z value`[f_oc_sum$rn == "	
+hab_raunk_interactionx1Pasture:x2chamaephyte"])
+
+f_oc_sum$`z value`[f_oc_sum$rn == "		
+hab_raunk_interactionx1Pasture:x2cryptophyte"] <- mean(
+  f_oc_sum$`z value`[f_oc_sum$rn == "	
+hab_raunk_interactionx1Pasture:x2cryptophyte"])
+
+f_oc_sum$`z value`[f_oc_sum$rn == "hab_raunk_interactionx1Pasture:x2hemicryptophyte"] <- mean(
+  f_oc_sum$`z value`[f_oc_sum$rn == "hab_raunk_interactionx1Pasture:x2hemicryptophyte"])
+
+f_oc_sum$Estimate[f_oc_sum$rn == "hab_raunk_interactionx1Plantation forest:x2hemicryptophyte"] <- mean(
+  f_oc_sum$Estimate[f_oc_sum$rn == "hab_raunk_interactionx1Plantation forest:x2hemicryptophyte"])
+
+f_oc_sum$`z value`[f_oc_sum$rn == "hab_raunk_interactionx1Primary forest:x2chamaephyte"] <- mean(
+  f_oc_sum$`z value`[f_oc_sum$rn == "hab_raunk_interactionx1Primary forest:x2chamaephyte"])
+
+f_oc_sum$`z value`[f_oc_sum$rn == "hab_raunk_interactionx1Primary non-forest:x2phanerophyte"] <- mean(
+  f_oc_sum$`z value`[f_oc_sum$rn == "hab_raunk_interactionx1Primary non-forest:x2phanerophyte"])
+
+f_oc_sum$`z value`[f_oc_sum$rn == "hab_raunk_interactionx1Primary non-forest:x2therophyte"] <- mean(
+  f_oc_sum$`z value`[f_oc_sum$rn == "hab_raunk_interactionx1Primary non-forest:x2therophyte"])
+
+f_oc_sum$`Pr(>|z|)`[f_oc_sum$rn == "hab_raunk_interactionx1Secondary vegetation (indeterminate age):x2hemicryptophyte"] <- mean(
+  f_oc_sum$`Pr(>|z|)`[f_oc_sum$rn == "hab_raunk_interactionx1Secondary vegetation (indeterminate age):x2hemicryptophyte"])
+
+f_oc_sum$`z value`[f_oc_sum$rn == "hab_raunk_interactionx1Urban:x2hemicryptophyte"] <- mean(
+  f_oc_sum$`z value`[f_oc_sum$rn == "hab_raunk_interactionx1Urban:x2hemicryptophyte"])
+
+f_oc_sum$`z value`[f_oc_sum$rn == "hab_raunk_interactionx1Young secondary vegetation:x2chamaephyte"] <- mean(
+  f_oc_sum$`z value`[f_oc_sum$rn == "hab_raunk_interactionx1Young secondary vegetation:x2chamaephyte"])
+
+f_oc_sum$`z value`[f_oc_sum$rn == "hab_raunk_interactionx1Young secondary vegetation:x2hemicryptophyte"] <- mean(
+  f_oc_sum$`z value`[f_oc_sum$rn == "hab_raunk_interactionx1Young secondary vegetation:x2hemicryptophyte"])
+
+f_oc_sum$`z value`[f_oc_sum$rn == "hab_raunk_interactionx1Young secondary vegetation:x2therophyte"] <- mean(
+  f_oc_sum$`z value`[f_oc_sum$rn == "hab_raunk_interactionx1Young secondary vegetation:x2therophyte"])
+
+f_oc_sum$`z value`[f_oc_sum$rn == "map"] <- mean(
+  f_oc_sum$`z value`[f_oc_sum$rn == "map"])
+
+f_oc_sum$`z value`[f_oc_sum$rn == "map_raunk_interactioninteractchamaephyte"] <- mean(
+  f_oc_sum$`z value`[f_oc_sum$rn == "map_raunk_interactioninteractchamaephyte"])
+
+f_oc_sum$Estimate[f_oc_sum$rn == "map_raunk_interactioninteractchamaephyte"] <- mean(
+  f_oc_sum$Estimate[f_oc_sum$rn == "map_raunk_interactioninteractchamaephyte"])
+
+f_oc_sum$`z value`[f_oc_sum$rn == "map_var_raunk_interactioninteracthemicryptophyte"] <- mean(
+  f_oc_sum$`z value`[f_oc_sum$rn == "map_var_raunk_interactioninteracthemicryptophyte"])
+
+f_oc_sum$`z value`[f_oc_sum$rn == "map_var_raunk_interactioninteracttherophyte"] <- mean(
+  f_oc_sum$`z value`[f_oc_sum$rn == "map_var_raunk_interactioninteracttherophyte"])
+
+f_oc_sum$`z value`[f_oc_sum$rn == "mat_raunk_interactioninteractchamaephyte"] <- mean(
+  f_oc_sum$`z value`[f_oc_sum$rn == "mat_raunk_interactioninteractchamaephyte"])
+
+f_oc_sum$`z value`[f_oc_sum$rn == "mat_var_raunk_interactioninteractcryptophyte"] <- mean(
+  f_oc_sum$`z value`[f_oc_sum$rn == "mat_var_raunk_interactioninteractcryptophyte"])
+
+f_oc_sum$`z value`[f_oc_sum$rn == "mat_var_raunk_interactioninteracthemicryptophyte"] <- mean(
+  f_oc_sum$`z value`[f_oc_sum$rn == "mat_var_raunk_interactioninteracthemicryptophyte"])
+
+f_oc_sum$eff_sz[f_oc_sum$rn == "Predominant_habitat.wecCropland"] <- mean(
+  f_oc_sum$eff_sz[f_oc_sum$rn == "Predominant_habitat.wecCropland"])
+
+f_oc_sum$`z value`[f_oc_sum$rn == "Predominant_habitat.wecPasture"] <- mean(
+  f_oc_sum$`z value`[f_oc_sum$rn == "Predominant_habitat.wecPasture"])
+
+f_oc_sum$`z value`[f_oc_sum$rn == "Predominant_habitat.wecPlantation forest"] <- mean(
+  f_oc_sum$`z value`[f_oc_sum$rn == "Predominant_habitat.wecPlantation forest"])
+
+f_oc_sum$`z value`[f_oc_sum$rn == "Predominant_habitat.wecPrimary non-forest"] <- mean(
+  f_oc_sum$`z value`[f_oc_sum$rn == "Predominant_habitat.wecPrimary non-forest"])
+
+f_oc_sum$Estimate[f_oc_sum$rn == "Predominant_habitat.wecPrimary non-forest"] <- mean(
+  f_oc_sum$Estimate[f_oc_sum$rn == "Predominant_habitat.wecPrimary non-forest"])
+
+f_oc_sum$`z value`[f_oc_sum$rn == "Predominant_habitat.wecUrban"] <- mean(
+  f_oc_sum$`z value`[f_oc_sum$rn == "Predominant_habitat.wecUrban"])
+
+f_oc_sum$`z value`[f_oc_sum$rn == "raunk_lf.wecchamaephyte"] <- mean(
+  f_oc_sum$`z value`[f_oc_sum$rn == "raunk_lf.wecchamaephyte"])
+
+f_oc_sum$`z value`[f_oc_sum$rn == "raunk_lf.weccryptophyte"] <- mean(
+  f_oc_sum$`z value`[f_oc_sum$rn == "raunk_lf.weccryptophyte"])
+
+f_oc_sum$`z value`[f_oc_sum$rn == "raunk_lf.wechemicryptophyte"] <- mean(
+  f_oc_sum$`z value`[f_oc_sum$rn == "raunk_lf.wechemicryptophyte"])
+
+f_oc_sum$`z value`[f_oc_sum$rn == "raunk_lf.wecphanerophyte"] <- mean(
+  f_oc_sum$`z value`[f_oc_sum$rn == "raunk_lf.wecphanerophyte"])
+
+f_oc_sum$`z value`[f_oc_sum$rn == "Species_richness"] <- mean(
+  f_oc_sum$`z value`[f_oc_sum$rn == "Species_richness"])
+
+f_oc_sum$`z value`[f_oc_sum$rn == "spp_raunk_interactioninteractphanerophyte"] <- mean(
+  f_oc_sum$`z value`[f_oc_sum$rn == "spp_raunk_interactioninteractphanerophyte"])
+
+f_oc_sum$`z value`[f_oc_sum$rn == "hab_raunk_interactionx1Mature secondary vegetation:x2phanerophyte"] <- mean(
+  f_oc_sum$`z value`[f_oc_sum$rn == "hab_raunk_interactionx1Mature secondary vegetation:x2phanerophyte"])
+
+f_oc_sum$`z value`[f_oc_sum$rn == "hab_raunk_interactionx1Pasture:x2chamaephyte"] <- mean(
+  f_oc_sum$`z value`[f_oc_sum$rn == "hab_raunk_interactionx1Pasture:x2chamaephyte"])
+
+f_oc_sum$`z value`[f_oc_sum$rn == "hab_raunk_interactionx1Pasture:x2cryptophyte"] <- mean(
+  f_oc_sum$`z value`[f_oc_sum$rn == "hab_raunk_interactionx1Pasture:x2cryptophyte"])
+
+f_oc_sum$`z value`[f_oc_sum$rn == "Predominant_habitat.wecUrban"] <- mean(
+  f_oc_sum$`z value`[f_oc_sum$rn == "Predominant_habitat.wecUrban"])
+
+
+f_oc_sum$`Pr(>|z|)`[f_oc_sum$rn == "hab_raunk_interactionx1Pasture:x2cryptophyte"] <- mean(
+  f_oc_sum$`Pr(>|z|)`[f_oc_sum$rn == "hab_raunk_interactionx1Pasture:x2cryptophyte"])
+
+f_oc_sum$eff_sz[f_oc_sum$rn == "Predominant_habitat.wecUrban"] <- mean(
+  f_oc_sum$eff_sz[f_oc_sum$rn == "Predominant_habitat.wecUrban"])
+
+f_oc_sum <- unique(f_oc_sum) ## 90 obs of 10 vars
+```
+
+
+```{r}
+#f_oc_sum <- readRDS("f_oc_sum.rds")
 f_oc_sum$land_av <- NA
 f_oc_sum$land_av[which(is.na(f_oc_sum$raunk_lf) & !is.na(f_oc_sum$landuse))] <- 1
+#saveRDS(f_oc_sum, "f_oc_sum.rds")
 ```

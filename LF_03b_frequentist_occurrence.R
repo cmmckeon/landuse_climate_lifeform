@@ -1,10 +1,19 @@
 #' ---
-#' title: "LF_04b_frequentist_pres_abs.R"
+#' title: "LF_03b_frequentist_occurrence.R"
 #' output: word_document
 #' ---
 #' 
-#' 
-#' # Set up
+
+## DATA NEEDED:
+
+# Data_ModelDF.rds  - Model dataframe with 624696 obs of 24 variables, created in LF_01_data_handling.R
+# Data_03b_PR_f_oc.rds - Taxonomy for the occurrence species, created in lines 53 - 63 of this script
+# Data_01_PR_plantDiversityCorr.rds  - plant data from PREDICTS project: a global dataset of local biodiversity responses to land-use (Hudson et al., 2016)
+## obtained from PREDICTS team in 2017. Needed to create the taxonomy
+
+
+
+# Set up
  print("This is the frequentist occurrence model script")
 
 setwd("~/landuse_climate_lifeform")
@@ -30,10 +39,9 @@ if(!exists("ModelDF")) {
   if(file.exists("Data_ModelDF.rds")) {
     try(ModelDF <- readRDS("Data_ModelDF.rds")) }
   else source("LF_01_data_handling.R")
-} ## 02/09/2020 624696 obs of 25 vars, unique, continuous vars are scaled
+} ## 02/09/2020 624696 obs of 24 vars, unique, continuous vars are scaled
 
 
-## ---------------------------------------------------------------------------------------------------------------------------------------
 ## handle model dataframe to get species levels in the right format
 levels(ModelDF$Best_guess_binomial) <- gsub(" ", "_", levels(ModelDF$Best_guess_binomial))
 mydata <- ModelDF
@@ -46,7 +54,7 @@ PR_oc <- readRDS("Data_03b_PR_f_oc.rds")
 #   if(file.exists("Data_03b_PR_f_oc.rds")) {
 #     try(PR_oc <- readRDS("Data_03b_PR_f_oc.rds"))
 #   } else try(
-#     {PR <- readRDS("Data_PR_plantDiversityCorr.rds")
+#     {PR <- readRDS("Data_01_PR_plantDiversityCorr.rds")
 #     levels(PR$Best_guess_binomial) <- gsub(" ", "_", levels(PR$Best_guess_binomial))
 #     PR <- PR[PR$Best_guess_binomial %in% mydata$Best_guess_binomial,]
 #     PR_oc <- unique(PR[, which(names(PR) %in% c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus",
@@ -100,8 +108,8 @@ mydata <- droplevels(merge(mydata, PR_oc, by = "Best_guess_binomial",all.x = TRU
 #   try(saveRDS(oc_maximal_zi, "f_oc_maximal_zi.rds"))
 # } else warning("oc_maximal_zi failed to run")
 
-#' ## ----oc_maximal_wec--------------------------------------------------------------------------------------------
-#' 
+## ----oc_maximal_wec--------------------------------------------------------------------------------------------
+ 
 ## set up for weighted effects coding
 
 print("configure contrasts for model a")
