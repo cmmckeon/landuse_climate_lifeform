@@ -46,7 +46,7 @@ Olson, D. M., Dinerstein, E., Wikramanayake, E. D., Burgess, N. D., Powell, G. V
 
 # On a cluster:
 
-LF_01_data_handling.R
+LF_01_data_handling.R (first make sure you have all the datasets detailed at the top of this script)
 
 (there is no LF_02; used to clean phylogeny when I was trying a bayesian version of this analysis - switched back to frequentist as it was way too computationally intensive)
 
