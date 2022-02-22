@@ -5,6 +5,21 @@ date: "10/19/2021"
 output: word_document
 ---
 
+## DATA NEEDED:
+
+# f_oc_sum - dataframe of results from occurrence model object - created in LF_06b_oc_estimates.R
+# f_pc_sum - dataframe of results from abundance model object - created in LF_06a_pc_estimates.R
+
+# Data_ModelDF.rds  - Model dataframe with 624696 obs of 24 variables, created in LF_01_data_handling.R
+
+# Data_08_anthromes_2_base_data_GeoTIFF/potveg.tif data from Ellis et al. (2010)
+# Data_08_average_biome_clim_vars.rds created in LF_08_clim_biome_ecoregion.Rmd
+# Data_08_average_ecoregion_clim_vars.rds created in LF_08_clim_biome_ecoregion.Rmd
+
+# Data_08_sd_model_clim_data.rds created in LF_08_clim_biome_ecoregion.Rmd
+# Data_08_average_biome_diffs.rds created in LF_08_clim_biome_ecoregion.Rmd
+# Data_08_average_ecoregion_diffs.rds created in LF_08_clim_biome_ecoregion.Rmd
+
 ```{r include=FALSE}
 library(tidyverse)
 library(broom.mixed)
@@ -122,12 +137,9 @@ ModelDF$Predominant_habitat <- factor(ModelDF$Predominant_habitat,
                                  "Plantation forest", "Primary non-forest", "Pasture", "Cropland", "Urban"))
 ```
 
-*Supplementary Information for “Land use and climate affect plant occurrence and abundance across life forms”*
+*Supplementary Figures for “Land use and climate affect plant occurrence and abundance across life forms”*
 
-## Appendix S1 – Table of data sources 
-
-
-## Appendix S2 – Map of data origins 
+## Map of data origins 
 
 ```{r, fig.height = 16, fig.width = 24}
 source("plot_enviro_pca.R")
@@ -202,9 +214,9 @@ annotate_figure(resp, #top = text_grob("Relative proportions of model data", fac
                 left = text_grob("Count", size = 15, rot = 90))
 ```
 
-## Appendix S4 – Data validation extended methods 
+## Data validation extended methods 
 
-## Appendix S5 – Biome and Ecoregion visual summaries
+## Biome and Ecoregion visual summaries
 ```{r fig.height = 4, fig.width = 10}
 biome <- readRDS("Data_08_average_biome_clim_vars.rds")
 
@@ -284,17 +296,6 @@ for(i in names(eco_diff[,which(names(eco_diff) %in% vars)])){
   abline(v = sd(data[,i]), lty = 1, col = "blue", lwd = 2)}
 
 ```
-
-## Appendix S6 – Effect size visual explanation
-
-## Appendix S7 – Extended references list
-
-
-
-
-
-
-
 
 
 

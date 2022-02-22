@@ -7,10 +7,18 @@ output: pdf_document
 
 DATA NEEDED:
 
+# Data_ModelDF.rds  - Model dataframe with 624696 obs of 24 variables, created in LF_01_data_handling.R
+# Data_ModelDF_unscaled.rds  - Model dataframe with 624696 obs of 24 variables, created in LF_01_data_handling.R
 
-Data_08_anthromes_2_base_data_GeoTIFF/potveg.tif data from Ellis et al. (2010)
-ecoregions based on Olson et al. (2001).
+# Data_08_anthromes_2_base_data_GeoTIFF/potveg.tif data from Ellis et al. (2010)
+# Data_08_official/wwf_terr_ecos files from data on ecoregion based on Olson et al. (2001).
 
+## bioclim variables from WorldClim version 1.4 - statistical summaries of climatic variables as static spatial bioclimatic variables at 30 second resolution, 
+## calculated using monthly records for temperature and rainfall from 1970-2000 (Fick & Hijmans, 2017). 
+# bio1.bil ## mean annual temperature (C*10)
+# bio12.bil ## mean annual precipatation (mm)
+# bio15.bil ## mean annual precip coeff variation
+# bio4.bil ## mean annual temp SD*100
 
 ## set up
 ```{r}
@@ -126,13 +134,14 @@ biome <- readRDS("Data_08_average_biome_clim_vars.rds")
 ## Ecoregions
 
 ```{r eval=FALSE, include=FALSE}
-#eco <- shapefile("terr-ecoregions-TNC/tnc_terr_ecoregions.shp")
 
 # teow <- readOGR(dsn = "Data_08_official", layer = "wwf_terr_ecos")
 # x <- rasterize(teow, mat)
 # a <- raster::deratify(x, "ECO_NAME")
-
 #writeRaster(a, "Data_08_teow_econame.grd")
+
+
+## OR 
 
 eco_rast <- raster("Data_08_teow_econame.grd")
 
@@ -159,7 +168,7 @@ for (i in 1:826){
 
 eco <- unique(eco)
 eco <- eco[order(-eco$mat),]
-## drops 17 ecoregions (too coastal I assume)
+## drops 17 ecoregions (too coastal)
 
 #saveRDS(eco, "Data_08_average_ecoregion_clim_vars.rds")
 ```
@@ -317,4 +326,42 @@ for(i in names(eco_diff[,which(names(eco_diff) %in% vars)])){
 ```
 
 
+```{r eval=FALSE, include=FALSE}
+d <- data.frame(1)
+for(i in names(data[,which(names(data) %in% vars)])){
+ d[1,i] <- sd(data[,i])
+ d[2,i] <- mean(data[,i])
+ d[3,i] <- median(data[,i])}
+d <- d[,-1]
+names(d) <- vars
+d <- rbind(c(rep(1,4)), d)
+#rownames(d) <- c("data", "sd", "mean", "median")
+
+b <- data.frame(1)
+for(i in names(biome_diff[,which(names(biome_diff) %in% vars)])){
+ b[1,i] <- sd(biome_diff[,i])
+ b[2,i] <- mean(biome_diff[,i])
+ b[3,i] <- median(biome_diff[,i])}
+b<- b[,-1]
+names(b) <- vars
+b <- rbind(c(rep(1,4)), b)
+#rownames(b) <- c("biome", "sd", "mean", "median")
+
+e <- data.frame(1)
+for(i in names(eco_diff[,which(names(eco_diff) %in% vars)])){
+ e[1,i] <- sd(eco_diff[,i])
+ e[2,i] <- mean(eco_diff[,i])
+ e[3,i] <- median(eco_diff[,i])}
+e<- e[,-1]
+names(e) <- vars
+e <- rbind(c(rep(1,4)), e)
+#rownames(e) <- c("ecoregion", "sd", "mean", "median")
+
+sum <- rbind(d,b,e)
+for (i in names(Filter(is.numeric, sum))) {
+  sum[,i] <- round(sum[,i], 2)}
+sum$rn <-c("Model data", "sd", "mean", "median","Biome", "sd", "mean", "median", "Ecoregion", "sd", "mean", "median")
+all_clim_ave <- sum[c(5,1:4)]
+#saveRDS(all_clim_ave, "Data_08_all_clim_ave.rds")
+```
 

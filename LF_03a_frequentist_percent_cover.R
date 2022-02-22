@@ -6,9 +6,7 @@
 ## DATA NEEDED:
 
 # Data_ModelDF.rds  - Model dataframe with 624696 obs of 24 variables, created in LF_01_data_handling.R
-# Data_03a_PR_f_pc.rds - Taxonomy for the percent cover species, created in lines 50 - 60 of this script
-# Data_01_PR_plantDiversityCorr.rds  - plant data from PREDICTS project: a global dataset of local biodiversity responses to land-use (Hudson et al., 2016)
-## obtained from PREDICTS team in 2017. Needed to create the taxonomy
+# Data_03a_PR_f_pc.rds - Taxonomy for the percent cover species, created in lines 425 - 437 of LF_01_data_handling.R 
 
 
 print("This is the frequentist percent cover model script")
@@ -49,18 +47,6 @@ mydata$animal <- mydata$Best_guess_binomial
 ## get taxomonic data for all species
 PR_pc <- readRDS("Data_03a_PR_f_pc.rds")
 
-# if(!exists("PR_pc")) {
-#   if(file.exists("Data_03a_PR_f_pc.rds")) {
-#     try(PR_pc <- readRDS("Data_03a_PR_f_pc.rds"))
-#   } else try(
-#     {PR <- readRDS("Data_01_PR_plantDiversityCorr.rds")
-#     levels(PR$Best_guess_binomial) <- gsub(" ", "_", levels(PR$Best_guess_binomial))
-#     PR <- PR[PR$Best_guess_binomial %in% mydata$Best_guess_binomial,]
-#     PR_pc <- unique(PR[, which(names(PR) %in% c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus",
-#                                                          "Best_guess_binomial"))])
-#     saveRDS(PR_pc,"Data_03a_PR_f_pc.rds")})
-# }
-
 mydata <- droplevels(merge(mydata, PR_pc, by = "Best_guess_binomial",all.x = TRUE)) 
 
 ## set up for weighted effects coding ---------------
@@ -72,7 +58,7 @@ mydata$Predominant_habitat.wec <- factor(mydata$Predominant_habitat)
 contrasts(mydata$Predominant_habitat.wec) <- contr.wec(mydata$Predominant_habitat, "Urban")
 mydata$raunk_lf.wec <- factor(mydata$raunk_lf)
 contrasts(mydata$raunk_lf.wec) <- contr.wec(mydata$raunk_lf, "therophyte")
-## interations
+## interactions
 mydata$hab_raunk_interaction <- mydata$Predominant_habitat
 mydata$hab_raunk_interaction <- wec.interact(mydata$Predominant_habitat.wec, mydata$raunk_lf.wec)
 mydata$map_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$map)

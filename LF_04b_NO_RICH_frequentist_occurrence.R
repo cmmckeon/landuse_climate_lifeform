@@ -6,9 +6,7 @@
 ## DATA NEEDED:
 
 # Data_ModelDF.rds  - Model dataframe with 624696 obs of 24 variables, created in LF_01_data_handling.R
-# Data_03b_PR_f_oc.rds - Taxonomy for the occurrence species, created in LF_03b_frequentist_occurrence.R
-# Data_01_PR_plantDiversityCorr.rds  - plant data from PREDICTS project: a global dataset of local biodiversity responses to land-use (Hudson et al., 2016)
-## obtained from PREDICTS team in 2017. Needed to create the taxonomy
+# Data_03b_PR_f_oc.rds - Taxonomy for the occurrence species, created in lines 439 - 450 of this script
 
 
 # Set up
@@ -48,18 +46,6 @@ mydata$animal <- mydata$Best_guess_binomial
 
 ## get taxomonic data for all species
 PR_oc <- readRDS("Data_03b_PR_f_oc.rds")
-
-# ## get taxomonic data for all species
-# if(!exists("PR_oc")) {
-#   if(file.exists("Data_03b_PR_f_oc.rds")) {
-#     try(PR_oc <- readRDS("Data_03b_PR_f_oc.rds"))
-#   } else try(
-#     {PR <- readRDS("Data_PR_plantDiversityCorr.rds")
-#     levels(PR$Best_guess_binomial) <- gsub(" ", "_", levels(PR$Best_guess_binomial))
-#     PR <- PR[PR$Best_guess_binomial %in% mydata$Best_guess_binomial,]
-#     PR_oc <- unique(PR[, which(names(PR) %in% c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus",
-#                                                 "Best_guess_binomial"))])})
-# }
 
 mydata <- droplevels(merge(mydata, PR_oc, by = "Best_guess_binomial",all.x = TRUE)) 
 
@@ -136,7 +122,8 @@ oc_wec_NO_RICH_int_maximal_zi_1_nested_no_U_T <- glmmTMB(pres_abs ~ Predominant_
                                     mat_var_raunk_interaction +
                            (1|Best_guess_binomial) +
                            (1|SS) +
-                           (1|Class/Order/Family/Genus),
+                           (1|#Class/
+                              Order/Family/Genus),
                            ziformula= ~ 1,
                          family = binomial,
                          control = glmmTMBControl(optCtrl = list(iter.max = 10000, eval.max = 10000),
@@ -163,30 +150,31 @@ mydata$map_var_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$map
 mydata$mat_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$mat)
 mydata$mat_var_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$mat_var)
 
-# print("start running model b")
-# oc_wec_NO_RICH_int_maximal_zi_1_nested_no_PF_P <- glmmTMB(pres_abs ~ Predominant_habitat.wec + raunk_lf.wec + hab_raunk_interaction +
-#                                                     map +
-#                                                     map_var +
-#                                                     mat +
-#                                                     mat_var +
-#                                                     map_raunk_interaction +
-#                                                     map_var_raunk_interaction +
-#                                                     mat_raunk_interaction +
-#                                                     mat_var_raunk_interaction +
-#                                                     (1|Best_guess_binomial) +
-#                                                     (1|SS) +
-#                                                     (1|Class/Order/Family/Genus),
-#                                                   ziformula= ~ 1,
-#                                                   family = binomial,
-#                                                   control = glmmTMBControl(optCtrl = list(iter.max = 10000, eval.max = 10000),
-#                                                                            profile = FALSE, collect = FALSE),
-#                                                   data = mydata)
-# 
-# if(exists("oc_wec_NO_RICH_int_maximal_zi_1_nested_no_PF_P")) {
-#   try(saveRDS(oc_wec_NO_RICH_int_maximal_zi_1_nested_no_PF_P, "oc_wec_NO_RICH_int_maximal_zi_1_nested_no_PF_P.rds"))
-# } else warning("oc_wec_NO_RICH_int_maximal_zi_1_nested_no_PF_P failed to run")
-# 
-# print("ran model omitting Primary forest and phanerophte, now running model omitting Pasture and cryptophyte")
+print("start running model b")
+oc_wec_NO_RICH_int_maximal_zi_1_nested_no_PF_P <- glmmTMB(pres_abs ~ Predominant_habitat.wec + raunk_lf.wec + hab_raunk_interaction +
+                                                    map +
+                                                    map_var +
+                                                    mat +
+                                                    mat_var +
+                                                    map_raunk_interaction +
+                                                    map_var_raunk_interaction +
+                                                    mat_raunk_interaction +
+                                                    mat_var_raunk_interaction +
+                                                    (1|Best_guess_binomial) +
+                                                    (1|SS) +
+                                                    (1|#Class/
+                                                       Order/Family/Genus),
+                                                  ziformula= ~ 1,
+                                                  family = binomial,
+                                                  control = glmmTMBControl(optCtrl = list(iter.max = 10000, eval.max = 10000),
+                                                                           profile = FALSE, collect = FALSE),
+                                                  data = mydata)
+
+if(exists("oc_wec_NO_RICH_int_maximal_zi_1_nested_no_PF_P")) {
+  try(saveRDS(oc_wec_NO_RICH_int_maximal_zi_1_nested_no_PF_P, "oc_wec_NO_RICH_int_maximal_zi_1_nested_no_PF_P.rds"))
+} else warning("oc_wec_NO_RICH_int_maximal_zi_1_nested_no_PF_P failed to run")
+
+print("ran model omitting Primary forest and phanerophte, now running model omitting Pasture and cryptophyte")
 
 print("configure contrasts for model c")
 ## main effects
@@ -214,7 +202,8 @@ oc_wec_NO_RICH_int_maximal_zi_1_nested_no_P_C <- glmmTMB(pres_abs ~ Predominant_
                                                    mat_var_raunk_interaction +
                                                    (1|Best_guess_binomial) + 
                                                    (1|SS) +
-                                                   (1|Class/Order/Family/Genus),
+                                                   (1|#Class/
+                                                      Order/Family/Genus),
                                                  ziformula= ~ 1,
                                                  family = binomial, 
                                                  control = glmmTMBControl(optCtrl = list(iter.max = 10000, eval.max = 10000), 

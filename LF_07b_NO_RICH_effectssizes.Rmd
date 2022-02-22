@@ -6,11 +6,15 @@ output: word_document
 ---
 
 
--	In balanced data design, a model’s estimates and predicted values are the same. In unbalanced design (unequal amounts of data from different groups within the data – typical of observational studies), the model estimates show something close to the observed mean of a model term in the data. The observed mean will be inflated or decreased if a large amount of that data comes from a random effect group which itself is above or below the unweighted average of the random effect. 
--	Predicted effects are marginal, meaning they represent the effect associated with a model term, independent of the influence of the random effects. 
--	In this analysis, the model estimates (real world means) are different from predicted values. This implies that random effects, such as location, species and taxonomy, are important in influencing occurrence and abundance. 
--	I think we are more interested in occurrence and abundance patterns in the real world, rather than what changes we might see in a generic situation where we have excluded the influence of potentially biologically meaningful site specific and taxonomic effects.
+## DATA NEEDED:
 
+# Data_ModelDF.rds  - Model dataframe with 624696 obs of 24 variables, created in LF_01_data_handling.R
+# Data_ModelDF_unscaled.rds  - Model dataframe with 624696 obs of 24 variables, created in LF_01_data_handling.R
+
+## the three NO RICHNESS weighted effects coding models for the occurrence data, created in LF_04b_MO_RICH_frequentist_occurrence.R
+# oc_wec_NO_RICH_int_maximal_zi_1_nested_no_P_C.rds
+# oc_wec_NO_RICH_int_maximal_zi_1_nested_no_PF_P_C.rds
+# oc_wec_NO_RICH_int_maximal_zi_1_nested_no_U_T.rds
 
 ## set up 
 ```{r set up, echo=FALSE}
@@ -59,7 +63,7 @@ mydata <- ModelDF
 levels(ModelDF$Best_guess_binomial) <- gsub(" ", "_", levels(ModelDF$Best_guess_binomial))
 mydata$animal <- mydata$Best_guess_binomial
 
-PR_oc <- readRDS("Data_PR_f_oc.rds")
+PR_oc <- readRDS("Data_03b_PR_f_oc.rds")
 mydata <- droplevels(merge(mydata, PR_oc, by = "Best_guess_binomial",all.x = TRUE)) 
 
 unscaled_data <- ModelDF_unscaled
@@ -82,33 +86,10 @@ for (i in levels(mydata$raunk_lf)){
 }
 ```
 
-
-```{r plotting themes}
-# blank theme
-set_theme(
-  base = theme_classic(),
-  axis.title.size = 2,
-  axis.textsize = 1.2,
-  legend.size = 2,
-  legend.title.size = 2,
-  geom.label.size = 3,
-  plot.margin = margin(3, 5, 1, 5, "pt")
-)
-
-## text editing
-get_wraper <- function(width) {
-  function(x) {
-    lapply(strwrap(x, width = width, simplify = FALSE), paste, collapse="\n")}}
-## colour palett
-cb_pal <- c("#01665e", "#5ab4ac","#c7eae5", "#d8b365", 
-            "#8c510a")
-```
-
-
 ## Effect Size
 
 ```{r tidy oc wec a, eval=FALSE, include=FALSE}
-f_mod_a <- readRDS("f_oc_wec_NO_RICH_int_maximal_zi_1_nested_no_U_T.rds")
+f_mod_a <- readRDS("oc_wec_NO_RICH_int_maximal_zi_1_nested_no_U_T.rds")
 f_oc_sum_a <- summary(f_mod_a)[["coefficients"]]
 f_oc_sum_a <- f_oc_sum_a[c("cond","zi")]
 f_oc_sum_a <- as.data.frame(f_oc_sum_a[["cond"]])
@@ -167,7 +148,7 @@ f_oc_sum_a <- f_oc_sum_a[order(-f_oc_sum_a$raunk_lf, f_oc_sum_a$landuse),]
 ```
 
 ```{r tidy oc wec b, eval=FALSE, include=FALSE}
-f_mod_b <- readRDS("f_oc_wec_NO_RICH_int_maximal_zi_1_nested_no_PF_P.rds")
+f_mod_b <- readRDS("oc_wec_NO_RICH_int_maximal_zi_1_nested_no_PF_P.rds")
 f_oc_sum_b <- summary(f_mod_b)[["coefficients"]]
 f_oc_sum_b <- f_oc_sum_b[c("cond","zi")]
 f_oc_sum_b <- as.data.frame(f_oc_sum_b[["cond"]])
@@ -226,7 +207,7 @@ f_oc_sum_b <- f_oc_sum_b[order(-f_oc_sum_b$raunk_lf, f_oc_sum_b$landuse),]
 ```
 
 ```{r tidy oc wec c, eval=FALSE, include=FALSE}
-f_mod_c <- readRDS("f_oc_wec_NO_RICH_int_maximal_zi_1_nested_no_P_C.rds")
+f_mod_c <- readRDS("oc_wec_NO_RICH_int_maximal_zi_1_nested_no_P_C.rds")
 f_oc_sum_c <- summary(f_mod_c)[["coefficients"]]
 f_oc_sum_c <- f_oc_sum_c[c("cond","zi")]
 f_oc_sum_c <- as.data.frame(f_oc_sum_c[["cond"]])
@@ -286,12 +267,28 @@ f_oc_sum_c <- f_oc_sum_c[order(-f_oc_sum_c$raunk_lf, f_oc_sum_c$landuse),]
 
 ```{r, eval=FALSE, include=FALSE}
 f_oc_sum <- unique(rbind(f_oc_sum_a, f_oc_sum_b, f_oc_sum_c))
-f_oc_sum$Estimate <- round(f_oc_sum$Estimate, 2)
-f_oc_sum$Std.Error <- round(f_oc_sum$Std.Error, 2)
-f_oc_sum$`z value` <- round(f_oc_sum$`z value`, 2)
-f_oc_sum$`Pr(>|z|)` <- round(f_oc_sum$`Pr(>|z|)`, 2)
-f_oc_sum$eff_sz <- round(f_oc_sum$eff_sz, 2)
-f_oc_sum$ci <- round(f_oc_sum$ci, 2)
+f_oc_sum$Estimate <- round(f_oc_sum$Estimate, 3)
+f_oc_sum$Std.Error <- round(f_oc_sum$Std.Error, 3)
+f_oc_sum$`z value` <- round(f_oc_sum$`z value`, 3)
+f_oc_sum$`Pr(>|z|)` <- round(f_oc_sum$`Pr(>|z|)`, 3)
+f_oc_sum$eff_sz <- round(f_oc_sum$eff_sz, 3)
+f_oc_sum$ci <- round(f_oc_sum$ci, 3)
+f_oc_sum <- unique(f_oc_sum)
+```
+
+
+```{r}
+#get average of estimates that differ at the 3rd decimal place
+for (i in levels(factor(f_oc_sum$rn))){
+  if (length(f_oc_sum$rn[f_oc_sum$rn == i]) > 1) {
+  f_oc_sum$Estimate[f_oc_sum$rn == i] <- mean(f_oc_sum$Estimate[f_oc_sum$rn == i])
+  f_oc_sum$Std.Error[f_oc_sum$rn == i] <- mean(f_oc_sum$Std.Error[f_oc_sum$rn == i])
+  f_oc_sum$`z value`[f_oc_sum$rn == i] <- mean(f_oc_sum$`z value`[f_oc_sum$rn == i])
+  f_oc_sum$`Pr(>|z|)`[f_oc_sum$rn == i] <- mean(f_oc_sum$`Pr(>|z|)`[f_oc_sum$rn == i])
+  f_oc_sum$eff_sz[f_oc_sum$rn == i] <- mean(f_oc_sum$eff_sz[f_oc_sum$rn == i])
+  f_oc_sum$ci[f_oc_sum$rn == i] <- mean(f_oc_sum$ci[f_oc_sum$rn == i])
+  }
+}
 f_oc_sum <- unique(f_oc_sum)
 ```
 
@@ -307,7 +304,11 @@ quick cheat for knitting plots
 #saveRDS(f_oc_sum, "f_oc_NO_RICH_sum.rds")
 f_oc_sum <- readRDS("f_oc_NO_RICH_sum.rds")
 
-## all works fine as far as here (i think)
+f_oc_sum$land_av <- NA
 f_oc_sum$land_av[which(!is.na(f_oc_sum$landuse) & is.na(f_oc_sum$raunk_lf))] <- 1
+#saveRDS(f_oc_sum, "f_oc_NO_RICH_sum.rds")
 ```
+
+
+
 

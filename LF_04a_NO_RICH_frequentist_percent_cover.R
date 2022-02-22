@@ -7,10 +7,7 @@
 ## DATA NEEDED:
 
 # Data_ModelDF.rds  - Model dataframe with 624696 obs of 24 variables, created in LF_01_data_handling.R
-# Data_03a_PR_f_pc.rds - Taxonomy for the percent cover species, created LF_03a_frequentist_percent_cover.R
-# Data_01_PR_plantDiversityCorr.rds  - plant data from PREDICTS project: a global dataset of local biodiversity responses to land-use (Hudson et al., 2016)
-## obtained from PREDICTS team in 2017. Needed to create the taxonomy
-
+# Data_03a_PR_f_pc.rds - Taxonomy for the percent cover species, created in lines 425 - 437 of LF_01_data_handling.R 
 
 print("This is the NO SPECIES RICHNESS frequentist percent cover model script")
 setwd("~/landuse_climate_lifeform")
@@ -52,18 +49,6 @@ mydata$animal <- mydata$Best_guess_binomial
 
 ## get taxomonic data for all species
 PR_pc <- readRDS("Data_03a_PR_f_pc.rds")
-
-# ## get taxomonic data for all species
-# if(!exists("PR_pc")) {
-#   if(file.exists("Data_03a_PR_f_pc.rds")) {
-#     try(PR_pc <- readRDS("Data_03a_PR_f_pc.rds"))
-#   } else try(
-#     {PR <- readRDS("Data_PR_plantDiversityCorr.rds")
-#     levels(PR$Best_guess_binomial) <- gsub(" ", "_", levels(PR$Best_guess_binomial))
-#     PR <- PR[PR$Best_guess_binomial %in% mydata$Best_guess_binomial,]
-#     PR_pc <- unique(PR[, which(names(PR) %in% c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus",
-#                                                 "Best_guess_binomial"))])})
-# }
 
 mydata <- droplevels(merge(mydata, PR_pc, by = "Best_guess_binomial",all.x = TRUE)) 
 
