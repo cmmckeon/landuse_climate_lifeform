@@ -17,8 +17,11 @@ LF_01_data_handling.R
 (there is no LF_02; used to clean phylogeny when I was trying a bayesian version of this analysis - switched back to frequentist as it was way too computationally intensive)
 
 LF_03a_frequentist_percent_cover.R 
+
 LF_03b_frequentist_occurrence.R
+
 LF_04a_NO_RICH_frequentist_percent_cover.R
+
 LF_04b_NO_RICH_frequentist_occurrence.R
 
 # On a desktop: 
@@ -26,14 +29,17 @@ LF_04b_NO_RICH_frequentist_occurrence.R
 #LF_05_diagnostics_frequentist.R
 
 LF_06a_pc_estimates.Rmd
+
 LF_06b_oc_estimates.Rmd
 
 LF_07a_NO_RICH_pc_effectsizes.Rmd
+
 LF_07b_NO_RICH_oc_effectsizes.Rmd
 
 LF_08_clim_biome_ecoregion.Rmd
 
 LF_09a_panel_figs.Rmd
+
 LF_09b_sups_panel_figs.Rmd
 
 LF_10_sups_figures.Rmd
