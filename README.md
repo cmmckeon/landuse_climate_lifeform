@@ -2,10 +2,10 @@ landuse_climate_lifeform
 
 This repository is for the code and data files used in the landuse_climate_lifeform project looking at the relationships between plant life form and species occurrence and abundance across human land uses.
 
-Code written by Caroline McKeon funded by Irish Research Council Government of Ireland Postgraduate Scholarship award GOIPG/2018/475, with help from the opensource commmunity at Stack Overflow. 
-
 This workflow is for compiling, cleaning, handling, analysing and visualising land use and Raunkiear life form data and the results of the analysis.
 Analysis was carried out on Trinity College Dublin's lonsdale computing cluster, which is funded through grants from Science Foundation Ireland. 
+
+Code written (with help from the open source commmunity at stack overflow) by Caroline McKeon, funded by Irish Research Council Government of Ireland Postgraduate Scholarship award GOIPG/2018/475.
 
 # Data sources:
 
@@ -22,7 +22,6 @@ Kattge, J., Díaz, S., Lavorel, S., Prentice, I. C., Leadley, P., Bönisch, G., 
 
 BIEN - https://bien.nceas.ucsb.edu/bien/ 
 Maitner, B. S., Boyle, B., Casler, N., Condit, R., II, J. D., Durán, S. M., Guaderrama, D., Hinchliff, C. E., Jørgensen, P. M., Kraft, N. J. B., McGill, B., Merow, C., Morueta‐Holme, N., Peet, R. K., Sandel, B., Schildhauer, M., Smith, S. A., Svenning, J., Thiers, B., … Enquist, B. J. (2018). The bien r package: A tool to access the Botanical Information and Ecology Network (BIEN) database. Methods in Ecology and Evolution, 9(2), 373–379. https://doi.org/10.1111/2041-210X.12861 
-
 
 Climate
 
