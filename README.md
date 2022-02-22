@@ -105,7 +105,7 @@ LF_08_clim_biome_ecoregion.Rmd
 LF_09a_panel_figs.Rmd
 LF_09b_sups_panel_figs.Rmd
 
-LF_10_sups_figures.Rmd\
+LF_10_sups_figures.Rmd
 
 LF_11_sups_tables.Rmd
 
