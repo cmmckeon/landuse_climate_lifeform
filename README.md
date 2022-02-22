@@ -7,6 +7,14 @@ Code written by Caroline McKeon funded by Irish Research Council Government of I
 This workflow is for compiling, cleaning, handling, analysing and visualising land use and Raunkiear life form data and the results of the analysis.
 Analysis was carried out on Trinity College Dublin's lonsdale computing cluster, which is funded through grants from Science Foundation Ireland. 
 
+# Data sources:
+
+Land use
+
+PREDICTS - https://www.predicts.org.uk/pages/outputs.html 
+
+Hudson, L. N., Newbold, T., Contu, S., Hill, S. L. L., Lysenko, I., De Palma, A., Phillips, H. R. P., Senior, R. A., Bennett, D. J., Booth, H., Choimes, A., Correia, D. L. P., Day, J., Echeverría-Londoño, S., Garon, M., Harrison, M. L. K., Ingram, D. J., Jung, M., Kemp, V., … Purvis, A. (2016). The PREDICTS database: A global database of how local terrestrial biodiversity responds to human impacts. Ecology and Evolution, 4(24), 4701–4735. https://doi.org/10.1002/ece3.1303![image](https://user-images.githubusercontent.com/44772138/155151408-947a7cbd-7947-4e8f-a0f6-f2ac25c732d7.png)
+
 
 # Scripts should be run in this order:
 
