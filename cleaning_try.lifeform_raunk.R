@@ -2,8 +2,6 @@
 ## initally 144 levels
 ## I want to clean themn to less than 10 classifications and then the combinations thereof
 
-##to do 
-
 
 ## name the raunkiear life form dataset "mydata"
 mydata <- pgl_raunk
@@ -50,17 +48,6 @@ mydata$OrigValueStr <-gsub(paste(hemicryptophyte, collapse = "|"), "hemicryptoph
 ## find all levels containing a string of interest
 #dput(paste(mydata$OrigValueStr[grep(("hh"), mydata$OrigValueStr, ignore.case =TRUE)]))
 ## excluding T-H(Hh), all are suitable for transformation into Hh only.
-
-
-## this is bad don't do it
-## have to code this the clunky way as I don't know how to leave a level out of grep
-# mydata$OrigValueStr <-gsub("\\(hh)", "hydrophyte", mydata$OrigValueStr, ignore.case = TRUE)
-# 
-# 
-# dput(paste(mydata$OrigValueStr[grep(("\\(ch)"), mydata$OrigValueStr, ignore.case =TRUE)]))
-
-
-
 
 ## changing commas to forward slashes
 mydata$OrigValueStr <-gsub(", |-", "/", mydata$OrigValueStr)
