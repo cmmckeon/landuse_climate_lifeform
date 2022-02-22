@@ -16,7 +16,7 @@ LF_01_data_handling.R
 
 (there is no LF_02; used to clean phylogeny when I was trying a bayesian version of this analysis - switched back to frequentist as it was way too computationally intensive)
 
-LF_03a_frequentist_percent_cover.R
+LF_03a_frequentist_percent_cover.R 
 LF_03b_frequentist_occurrence.R
 LF_04a_NO_RICH_frequentist_percent_cover.R
 LF_04b_NO_RICH_frequentist_occurrence.R
