@@ -1,10 +1,74 @@
-landuse_climate_lifeform
+landuse_climate_lifeform;
 Project looking at the relationships between plant life form and species occurrence and abundance across human land use.
 Code written by Caroline McKeon funded by Irish Research Council Government of Ireland Postgraduate Scholarship award GOIPG/2018/475, with help from the opensource commmunity at Stack Overflow. 
 
 This workflow is for compiling, cleaning, handling, analysing and visualising land use and Raunkiear life form data and the results of the analysis.
 Analysis was carried out on Trinity College Dublin's lonsdale computing cluster, which is funded through grants from Science Foundation Ireland. 
 
+
+# Scripts should be run in this order:
+
+# On a cluster:
+
+LF_01_data_handling.R
+
+(there is no LF_02; used to clean phylogeny when I was trying a bayesian version of this analysis - switched back to frequentist as it was way too computationally intensive)
+
+LF_03a_frequentist_percent_cover.R
+LF_03b_frequentist_occurrence.R
+LF_04a_NO_RICH_frequentist_percent_cover.R
+LF_04b_NO_RICH_frequentist_occurrence.R
+
+# On a desktop: 
+
+#LF_05_diagnostics_frequentist.R
+
+LF_06a_pc_estimates.Rmd
+LF_06b_oc_estimates.Rmd
+
+LF_07a_NO_RICH_pc_effectsizes.Rmd
+LF_07b_NO_RICH_oc_effectsizes.Rmd
+
+LF_08_clim_biome_ecoregion.Rmd
+
+LF_09a_panel_figs.Rmd
+LF_09b_sups_panel_figs.Rmd
+
+LF_10_sups_figures.Rmd
+
+LF_11_sups_tables.Rmd
+
+
+## bash scripts
+
+# mckeonc2_f_pc_script.sh
+#!/bin/sh
+#SBATCH -n 8           # 8 CPU cores, each lonsdale node has 8 such cores
+#SBATCH -t 4-00:00:00   # 4 days
+#SBATCH -p compute      # partition name
+#SBATCH -J mckeonc_predicts_analysis  # sensible name for the job
+pwd
+## set up your environment
+source ~/git/spack/share/spack/setup-env.sh && spack load r@3.6.3
+## launch the code
+Rscript ~/PREDICTS/LF_04a_frequentist_percent_cover.R
+
+
+# mckeonc2_f_oc_script.sh
+#!/bin/sh
+#SBATCH -n 8           # 8 CPU cores, each lonsdale node has 8 such cores
+#SBATCH -t 4-00:00:00   # 4 days
+#SBATCH --mem=64000
+#SBATCH -p compute      # partition name
+#SBATCH -J mckeonc_predicts_analysis  # sensible name for the job
+pwd
+## set up your environment
+source ~/git/spack/share/spack/setup-env.sh && spack load r@3.6.3
+## launch the code
+Rscript ~/PREDICTS/LF_04b_frequentist_occurrence.R
+
+
+ect.
 
 ## notes on using the cluster 
 
@@ -13,18 +77,13 @@ Clone git repository and upload onto cluster.
 You must have all your R packages installed before you try to run the analysis; heavy nodes (where you send jobs) have no internet access. 
 Packages installed from the R console on your head node can be libraries in you Rscript without a problem, as all the files are shared across the cluster
 
-# install.packages(c("lme4","optimx", "DHARMa", "glmmTMB", "MuMIn", "effects",
-#                    "tidyverse", "raster", "rgdal", "RColorBrewer",
-#                    "MCMCglmm", 'invgamma', "dismo", "wec"),
-#                  repos="https://cloud.r-project.org/")
-
-
-
-list <- 
-
+install.packages(c("lme4","optimx", "DHARMa", "glmmTMB", "MuMIn", "effects",
+                  "tidyverse", "raster", "rgdal", "RColorBrewer",
+                   "MCMCglmm", 'invgamma', "dismo", "wec"),
+                 repos="https://cloud.r-project.org/")
 
 #### ----------------------------------------------------------------------------------
-bash commands:
+# bash commands:
 
 ## vim mckeonc2_name_of_script.sh
 ## paste the below
@@ -43,11 +102,11 @@ pwd
 ## set up your environment (load the right R version)
 source ~/git/spack/share/spack/setup-env.sh && spack load r@3.6.3
 
-# launch the code
+## launch the code
 Rscript ~/PREDICTS/LF_0which_ever_script_you_need.R
 ## --------------------------
 
-# type escape key :wq to save bash script
+## type escape key :wq to save bash script
 #### ----------------------------------------------------------------------------------
 
 
@@ -74,112 +133,6 @@ sbatch mckeonc2_name_of_script.sh ## to run the bash script that sources your R 
 #### ----------------------------------------------------------------------------------
 #### ----------------------------------------------------------------------------------
 ## end of notes on using the cluster 
-
-
-
-Scripts should be run in this order:
-
-# On a cluster:
-
-LF_01_data_handling.R
-
-# there is no LF_02; used to clean phylogeny when I was trying a bayesian version of this analysis - switched back to frequentist as it was way too computationally intensive
-
-LF_03a_frequentist_percent_cover.R
-LF_03b_frequentist_occurrence.R
-LF_04a_NO_RICH_frequentist_percent_cover.R
-LF_04b_NO_RICH_frequentist_occurrence.R
-
-# On a desktop: 
-
-#LF_05_diagnostics_frequentist.R
-
-LF_06a_pc_estimates.Rmd
-LF_06b_oc_estimates.Rmd
-
-LF_07a_NO_RICH_pc_effectsizes.Rmd
-LF_07b_NO_RICH_oc_effectsizes.Rmd
-
-LF_08_clim_biome_ecoregion.Rmd
-
-LF_09a_panel_figs.Rmd
-LF_09b_sups_panel_figs.Rmd
-
-LF_10_sups_figures.Rmd
-
-LF_11_sups_tables.Rmd
-
-## set up
-
-setwd("~/PREDICTS")
-
-## set up ###################
-library(tidyverse)
-library(MCMCglmm)
-library(lme4)
-library(invgamma)
-library(glmmTMB)
-library(mulTree)
-library(phytools)
-library(doParallel)
-library(optimx) 
-
-## create "not in" operator
-'%nin%' = Negate('%in%')
-## create logit transformation function
-logitTransform <- function(x) { log(x/(1-x)) }
-
-## read in and handle data------------------------------------
-if(!exists("ModelDF")) {
-  if(file.exists("Data_ModelDF.rds")) {
-    try(ModelDF <- readRDS("Data_ModelDF.rds")) }
-    else source("LF_01_data_handling.R")
-} ## 02/09/2020 624696 obs of 25 vars, unique, continuous vars are scaled
-
-
-## handle model dataframe to get just percent cover data, with species levels in the right format
-levels(ModelDF$Best_guess_binomial) <- gsub(" ", "_", levels(ModelDF$Best_guess_binomial))
-
-mydata_data <- ModelDF[ModelDF$Diversity_metric == "percent cover", ]
-mydata_data <- mydata_data[mydata_data$Measurement !=0,]
-mydata_data <- unique(mydata_data)
-mydata_data$Measurement <- mydata_data$Measurement/100
-mydata_data$response <- scale(logitTransform(mydata_data$Measurement))
-mydata_data$animal <- mydata_data$Best_guess_binomial
-
-
-
-
-## bash scripts
-
-## mckeonc2_f_pc_script.sh
-#!/bin/sh
-#SBATCH -n 8           # 8 CPU cores, each lonsdale node has 8 such cores
-#SBATCH -t 4-00:00:00   # 4 days
-#SBATCH -p compute      # partition name
-#SBATCH -J mckeonc_predicts_analysis  # sensible name for the job
-pwd
-# set up your environment
-source ~/git/spack/share/spack/setup-env.sh && spack load r@3.6.3
-# launch the code
-Rscript ~/PREDICTS/LF_04a_frequentist_percent_cover.R
-
-
-## mckeonc2_f_oc_script.sh
-#!/bin/sh
-#SBATCH -n 8           # 8 CPU cores, each lonsdale node has 8 such cores
-#SBATCH -t 4-00:00:00   # 4 days
-#SBATCH --mem=64000
-#SBATCH -p compute      # partition name
-#SBATCH -J mckeonc_predicts_analysis  # sensible name for the job
-pwd
-# set up your environment
-source ~/git/spack/share/spack/setup-env.sh && spack load r@3.6.3
-# launch the code
-Rscript ~/PREDICTS/LF_04b_frequentist_occurrence.R
-
-
-ect.
 
 
 
