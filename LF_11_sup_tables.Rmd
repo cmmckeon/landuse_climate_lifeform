@@ -422,7 +422,17 @@ sum.df %>%
 ```
 
 
-
+And finally, get all R package citations.
+```{r}
+list <- c("ggdark", "broom.mixed", "cowplot", "gdalUtils", "kableExtra", 
+          "papeR", "xtable", "car", "carData", "ggridges", "gtools", "ggeffects", 
+          "ggpubr", "viridis", "viridisLite", "sjPlot", "data.table", "DHARMa", 
+          "wec", "glmmTMB", "optimx", "lme4", "Matrix", "RColorBrewer", 
+          "rgdal", "raster", "sp", "forcats", "stringr", "dplyr", "purrr", 
+          "readr", "tidyr", "tibble", "ggplot2", "tidyverse", "stats", 
+          "graphics", "grDevices", "utils", "datasets", "methods", "base")
+lapply(list, citation)
+```
 
 
 
