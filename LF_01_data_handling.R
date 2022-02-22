@@ -12,12 +12,22 @@
 # Data_01_PR_plantDiversityCorr.rds  - plant data from PREDICTS project: a global dataset of local biodiversity responses to land-use (Hudson et al., 2016)
 ## obtained from PREDICTS team in 2017. Also eeded to create the taxonomy
 # Data_01_sitediversityData.rds - site level species diversity data, calculated by PREDICTS team in 2017
-# Data_01_try_species_info.csv - TRY plant trait database species info (version 5)
+
 # Data_01_trait_info_try.csv - TRY plant trait database trait info (version 5)
-# Data_01_lifeform_try.txt - TRY plant trait database lifeform data (version 5)
+
 
 # Data_01_sp.list_BIEN.rds -BIEN plant database species list, obtained in 2019 using lines 75-101
 # Data_01_lifeform_bien.rds - BIEN plant database lifeform data, obtained in 2019 using lines 75-101
+
+
+
+# Data_01_wildareas-v3-2009-human-footprint-geotiff/wildareas-v3-2009-human-footprint.tif from SEDAC's Last of the Wild Project, 
+# Version 3 (LWP-3): 2009 Human Footprint, 2018 Release. (Venter et al 2018)
+# this data is no longer used as a variable, but retained as it has a small on affect the creation of the final model dataframe
+# (same final number of species, but changes the number of sites slightly, and so it is being kept in for reproducibility)
+
+
+## MANNUALLY DOWNLOAD - links in README.md
 
 ## bioclim variables from WorldClim version 1.4 - statistical summaries of climatic variables as static spatial bioclimatic variables at 30 second resolution, 
 ## calculated using monthly records for temperature and rainfall from 1970-2000 (Fick & Hijmans, 2017). 
@@ -25,6 +35,9 @@
 # bio12.bil ## mean annual precipatation (mm)
 # bio15.bil ## mean annual precip coeff variation
 # bio4.bil ## mean annual temp SD*100
+
+# Data_01_try_species_info.csv - TRY plant trait database species info (version 5)
+# Data_01_lifeform_try.txt - TRY plant trait database lifeform data (version 5)
 
 ## Set up
 #install.packages(c("tidyverse", "raster", "rgdal", "RColorBrewer"))
@@ -64,7 +77,7 @@ sp.list_TRY <- Reduce(intersect, list(unique(sp.info_try$AccSpeciesName),unique(
 ## * if you get errors connecting to server it is because the trinity network blocks SQL connections. 
 ## Hotspot or try another network and should work fine. 
 
-# bien_sp <- BIEN_list_all() ## 331065 obs of 1 var
+# bien_sp <- BIEN_list_all() ## 331065 obs of 1 var, obtained Januray 2020
 # sp.list_BIEN <- Reduce(intersect, list(unique(bien_sp$species),unique(PR$Best_guess_binomial))) ## 10080 speices
 #saveRDS(sp.list_BIEN, "Data_sp.list_BIEN.rds")
 
