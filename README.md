@@ -35,6 +35,7 @@ https://ecotope.org/files/anthromes/v2/data/base_data/anthromes_2_base_data_GeoT
 Ramankutty, N., & Foley, J. A. (1999). Estimating historical changes in global land cover: Croplands from 1700 to 1992. Global Biogeochemical Cycles, 13(4), 997–1027. https://doi.org/10.1029/1999GB900046
 
 Ecoregions 
+
 https://www.worldwildlife.org/publications/terrestrial-ecoregions-of-the-world 
 Olson, D. M., Dinerstein, E., Wikramanayake, E. D., Burgess, N. D., Powell, G. V. N., Underwood, E. C., D’amico, J. A., Itoua, I., Strand, H. E., Morrison, J. C., Loucks, C. J., Allnutt, T. F., Ricketts, T. H., Kura, Y., Lamoreux, J. F., Wettengel, W. W., Hedao, P., & Kassem, K. R. (2001). Terrestrial Ecoregions of the World: A New Map of Life on Earth. BioScience, 51(11), 933. https://doi.org/10.1641/0006-3568(2001)051[0933:TEOTWA]2.0.CO;2
 
