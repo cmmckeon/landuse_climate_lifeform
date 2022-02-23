@@ -12,15 +12,18 @@ Code written (with help from the open source commmunity at stack overflow) by Ca
 Land use
 
 PREDICTS - http://www.predicts.org.uk 
+
 Hudson, L. N., Newbold, T., Contu, S., Hill, S. L. L., Lysenko, I., De Palma, A., Phillips, H. R. P., Senior, R. A., Bennett, D. J., Booth, H., Choimes, A., Correia, D. L. P., Day, J., Echeverría-Londoño, S., Garon, M., Harrison, M. L. K., Ingram, D. J., Jung, M., Kemp, V., … Purvis, A. (2016). The PREDICTS database: A global database of how local terrestrial biodiversity responds to human impacts. Ecology and Evolution, 4(24), 4701–4735. https://doi.org/10.1002/ece3.1303 
 
 Life form
 
 TRY (version 5) - https://www.try-db.org/ 
+
 Kattge, J., Díaz, S., Lavorel, S., Prentice, I. C., Leadley, P., Bönisch, G., Garnier, E., Westoby, M., Reich, P. B., Wright, I. J., Cornelissen, J. H., Violle, C., Harrison, S. P., Van Bodegom, P. M., Reichstein, M., Enquist, B. J., Soudzilovskaia, N. A., Ackerly, D. D., Anand, M., … Wirth, C. (2011). TRY – a global database of plant traits. Global Change Biology, 17(9), 2905–2935. https://doi.org/10.1111/j.1365-2486.2011.02451.x
 
 
 BIEN - https://bien.nceas.ucsb.edu/bien/ 
+
 Maitner, B. S., Boyle, B., Casler, N., Condit, R., II, J. D., Durán, S. M., Guaderrama, D., Hinchliff, C. E., Jørgensen, P. M., Kraft, N. J. B., McGill, B., Merow, C., Morueta‐Holme, N., Peet, R. K., Sandel, B., Schildhauer, M., Smith, S. A., Svenning, J., Thiers, B., … Enquist, B. J. (2018). The bien r package: A tool to access the Botanical Information and Ecology Network (BIEN) database. Methods in Ecology and Evolution, 9(2), 373–379. https://doi.org/10.1111/2041-210X.12861 
 
 Climate
@@ -43,7 +46,7 @@ Olson, D. M., Dinerstein, E., Wikramanayake, E. D., Burgess, N. D., Powell, G. V
 
 # On a cluster:
 
-LF_01_data_handling.R
+LF_01_data_handling.R (first make sure you have all the datasets detailed at the top of this script)
 
 (there is no LF_02; used to clean phylogeny when I was trying a bayesian version of this analysis - switched back to frequentist as it was way too computationally intensive)
 
