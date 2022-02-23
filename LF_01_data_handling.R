@@ -53,7 +53,7 @@
 library(tidyverse)
 library(raster)
 library(rgdal)
-library(RColorBrewer)
+library(RColorBrewer) 
 
 ## create "not in" operator
 '%nin%' = Negate('%in%')
