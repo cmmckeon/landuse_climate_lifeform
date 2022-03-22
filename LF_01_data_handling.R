@@ -19,7 +19,7 @@
 
 ## Large files to download separately  
 
-## bioclim variables from WorldClim version 1.4 - statistical summaries of climatic variables as static spatial bioclimatic variables at 30 second resolution, 
+## bioclim variables from WorldClim version 1.4 - statistical summaries of climatic variables as static spatial bioclimatic variables at 5 minute resolution, 
 ## calculated using monthly records for temperature and rainfall from 1970-2000 (Fick & Hijmans, 2017). 
 # https://www.worldclim.org/data/v1.4/formats.html 
 

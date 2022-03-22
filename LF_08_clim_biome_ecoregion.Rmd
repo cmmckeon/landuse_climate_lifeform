@@ -13,7 +13,7 @@ DATA NEEDED:
 # Data_08_anthromes_2_base_data_GeoTIFF/potveg.tif data from Ellis et al. (2010)
 # Data_08_official/wwf_terr_ecos files from data on ecoregion based on Olson et al. (2001).
 
-## bioclim variables from WorldClim version 1.4 - statistical summaries of climatic variables as static spatial bioclimatic variables at 30 second resolution, 
+## bioclim variables from WorldClim version 1.4 - statistical summaries of climatic variables as static spatial bioclimatic variables at 5 minute resolution, 
 ## calculated using monthly records for temperature and rainfall from 1970-2000 (Fick & Hijmans, 2017). 
 # bio1.bil ## mean annual temperature (C*10)
 # bio12.bil ## mean annual precipatation (mm)
