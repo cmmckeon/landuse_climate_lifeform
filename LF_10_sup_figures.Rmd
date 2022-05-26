@@ -135,6 +135,14 @@ ModelDF$Predominant_habitat <- factor(ModelDF$Predominant_habitat,
                       levels = c("Primary forest", "unknown Secondary",  "Mature secondary", 
                                  "Intermediate secondary", "Young secondary",
                                  "Plantation forest", "Primary non-forest", "Pasture", "Cropland", "Urban"))
+## get percent cover data for sample sizes table
+mydata <- ModelDF
+
+## handle model dataframe to get just percent cover data, with species levels in the right format
+levels(ModelDF$Best_guess_binomial) <- gsub(" ", "_", levels(ModelDF$Best_guess_binomial))
+mydata <- ModelDF[ModelDF$Diversity_metric == "percent cover", ]
+mydata <- mydata[mydata$Measurement !=0,]
+mydata <- unique(mydata)
 ```
 
 *Supplementary Figures for “Land use and climate affect plant occurrence and abundance across life forms”*
@@ -207,11 +215,47 @@ lu <- lu + theme(axis.title.x = element_blank(), axis.title.y = element_blank(),
 lu2 <- lu2 + theme(axis.title.y = element_blank()) 
 raunk <- raunk + theme(axis.text.x = element_blank(), axis.title.x = element_blank(),
                          axis.ticks.x = element_blank(), axis.title.y = element_blank())
-raunk2 <- raunk2 + theme(axis.title.y = element_blank())
+raunk2 <- raunk2 + theme(axis.title.y = element_blank()) 
 
 resp <- ggarrange(lu, raunk, lu2, raunk2,  nrow = 2, ncol = 2, align = "hv", heights = c(2, 1)) + theme(plot.margin = margin(0.1,0.1,0.1,0.1, "cm"))
 annotate_figure(resp, #top = text_grob("Relative proportions of model data", face = "bold", size = 20),
                 left = text_grob("Count", size = 15, rot = 90))
+```
+
+```{r eval=FALSE, include=FALSE}
+sample_sizes <- as.data.frame(t(c(1:3)))
+for (i in levels(ModelDF$Predominant_habitat)){
+  for (j in levels(ModelDF$raunk_lf)){
+  sample_sizes <- rbind(sample_sizes, c(i,j, length(ModelDF$Predominant_habitat[ModelDF$Predominant_habitat == i & ModelDF$raunk_lf == j])))
+  }}
+names(sample_sizes) <- c("Land use", "Life form", "Occurrence sample size")
+
+for (i in levels(ModelDF$Predominant_habitat)){
+  for (j in levels(ModelDF$raunk_lf)){
+sample_sizes$'Abundance sample size'[sample_sizes$`Land use` == i & sample_sizes$`Life form` == j] <-
+  length(mydata$Predominant_habitat[mydata$Predominant_habitat == i & mydata$raunk_lf == j])
+}}
+
+sum.df <- as_tibble(sample_sizes[-1,])
+sum.df %>%
+  kable(booktabs = T, caption = "Table 10. Model sample sizes") %>%
+  kable_styling(bootstrap_options = "striped", full_width = T) %>%
+  kable_styling(font_size = 10)
+```
+
+```{r eval=FALSE, include=FALSE}
+sample_sizes <- as.data.frame(t(c(1:3)))
+for (i in levels(mydata$Predominant_habitat)){
+  for (j in levels(mydata$raunk_lf)){
+  sample_sizes <- rbind(sample_sizes, c(i,j, length(mydata$Predominant_habitat[mydata$Predominant_habitat == i & mydata$raunk_lf == j])))
+  }}
+names(sample_sizes) <- c("Land use", "Life form", "Sample size")
+
+sum.df <- as_tibble(sample_sizes[-1,])
+sum.df %>%
+  kable(booktabs = T, caption = "Table 10b. Abundance model sample sizes") %>%
+  kable_styling(bootstrap_options = "striped", full_width = T) %>%
+  kable_styling(font_size = 10)
 ```
 
 ## Data validation extended methods 
@@ -255,14 +299,14 @@ annotate_figure(resp, top = text_grob("Ecoregion averages for climatic variables
 
 ```
 
-```{r}
+```{r fig.height = 6.5, fig.width = 9}
 data <- readRDS("Data_08_sd_model_clim_data.rds")
 biome_diff <- readRDS("Data_08_average_biome_diffs.rds")
 eco_diff <- readRDS("Data_08_average_ecoregion_diffs.rds")
 vars <- c("map", "mat", "map_var", "mat_var")
 
 ## plot comparison of average differences with 1 sd in model data
-par(mfrow =c(3,4), mar=c(2,2,2,2))
+par(mfrow =c(3,4), mar=c(3,2,3,2))
 
 for(i in names(data[,which(names(data) %in% vars)])){
   par(bty = "l")
@@ -270,10 +314,10 @@ for(i in names(data[,which(names(data) %in% vars)])){
        breaks = 300,
        border = "grey", ylab = NULL, xlab = NULL,main = NULL, freq = F)
   lines(density(data[,i]))
-  abline(v=mean(data[,i]),col="red", lwd = 2)
-  abline(v=median(data[,i]),lty=2,col="red", lwd = 2)
-  abline(v = mean(data[,i])+sd(data[,i]), lty = 1, col = "blue", lwd = 2)
-  abline(v = mean(data[,i])-sd(data[,i]), lty = 1, col = "blue", lwd = 2)}
+  abline(v=mean(data[,i]),col="black", lwd = 2)
+  abline(v=median(data[,i]),lty=2,col="black", lwd = 2)
+  abline(v = mean(data[,i])+sd(data[,i]), lty = 1, col = "#A715AD", lwd = 2)
+  abline(v = mean(data[,i])-sd(data[,i]), lty = 1, col = "#A715AD", lwd = 2)}
 
 for(i in names(biome_diff[,which(names(biome_diff) %in% vars)])){
   par(bty = "l")
@@ -281,9 +325,9 @@ for(i in names(biome_diff[,which(names(biome_diff) %in% vars)])){
        breaks = 300, 
        border = "grey",ylab = NULL, xlab = NULL, main = NULL, freq = F)
   lines(density(biome_diff[,i]))
-    abline(v=mean(biome_diff[,i]),col="red", lwd = 2)
-  abline(v=median(biome_diff[,i]),lty=2,col="red", lwd = 2)
-  abline(v = sd(data[,i]), lty = 1, col = "blue", lwd = 2)}
+    abline(v=mean(biome_diff[,i]),col="black", lwd = 2)
+  abline(v=median(biome_diff[,i]),lty=2,col="black", lwd = 2)
+  abline(v = sd(data[,i]), lty = 1, col = "#A715AD", lwd = 2)}
 
 for(i in names(eco_diff[,which(names(eco_diff) %in% vars)])){
   par(bty = "l")
@@ -291,9 +335,9 @@ for(i in names(eco_diff[,which(names(eco_diff) %in% vars)])){
        breaks = 300,
        border = "grey", ylab = NULL,main = NULL, xlab = paste(i), freq = F)
   lines(density(eco_diff[,i]))
-    abline(v=mean(eco_diff[,i]),col="red", lwd = 2)
-  abline(v=median(eco_diff[,i]),lty=2,col="red", lwd = 2)
-  abline(v = sd(data[,i]), lty = 1, col = "blue", lwd = 2)}
+    abline(v=mean(eco_diff[,i]),col="black", lwd = 2)
+  abline(v=median(eco_diff[,i]),lty=2,col="black", lwd = 2)
+  abline(v = sd(data[,i]), lty = 1, col = "#A715AD", lwd = 2)}
 
 ```
 
