@@ -83,18 +83,6 @@ unscaled_data <- droplevels(merge(unscaled_data, PR_pc, by = "Best_guess_binomia
 ```
 
 
-```{r eval=FALSE, include=FALSE}
-mean(mydata$pres_abs)
-logitTransform(mean(mydata$pres_abs))
-for (i in levels(mydata$Predominant_habitat)){
-  print(c(i, length(mydata$Predominant_habitat[mydata$Predominant_habitat == i])))
-}
-
-for (i in levels(mydata$raunk_lf)){
-  print(c(i, length(mydata$raunk_lf[mydata$raunk_lf == i])))
-}
-```
-
 ## Model Estimates
 
 ```{r handle labling and tidy format pc, eval=FALSE, include=FALSE}
