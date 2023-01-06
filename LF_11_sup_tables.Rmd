@@ -7,24 +7,24 @@ output:
     df_print: paged
 ---
 
+
+## DATA NEEDED:
+
+# f_oc_sum - dataframe of results from occurrence model object - created in LF_06b_oc_estimates.R
+# f_pc_sum - dataframe of results from abundance model object - created in LF_06a_pc_estimates.R
+
+# Data_ModelDF.rds  - Model dataframe with 624696 obs of 24 variables, created in LF_01_data_handling.R
+
+# Data_08_all_clim_ave.rds created in LF_08_clim_biome_ecoregion.Rmd
+# Data_08_average_biome_clim_vars.rds created in LF_08_clim_biome_ecoregion.Rmd
+
+# f_oc_NO_RICH_sum - dataframe of results from NO RICHNESS occurrence model object - created in LF_07b_oc_effectsizes.R
+# f_pc_NO_RICH_sum - dataframe of results from NO RICHNESS abundance model object - created in LF_07a_pc_effectsizes.R
+
+
 ```{r echo=FALSE}
 library(tidyverse)
 library(broom.mixed)
-library(kableExtra)
-library(ggplot2)
-library(sjPlot) ## for the set_theme function
-library(viridis)
-library(ggpubr)
-library(ggeffects)
-library(gtools)
-library(ggridges)
-library(papeR)
-library(kableExtra)
-knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message = FALSE) 
-
-library(DHARMa)
-library(glmmTMB)
-library(lme4)
 library(data.table)
 library(ggplot2)
 library(sjPlot) ## for the set_theme function
@@ -35,7 +35,6 @@ library(gtools)
 library(ggridges)
 library(papeR)
 library(kableExtra)
-library(tidyverse)
 library(cowplot)
 knitr::opts_chunk$set(
 	echo = FALSE,
@@ -136,7 +135,7 @@ f_pc_sum$'Model terms'[f_pc_sum$`Model terms` == "0"] <- "Grand Mean"
 ```
 
 
-# Table 1. Occurrence model output
+# Table 3. Occurrence model output
 ```{r}
 # tables of model outputs
 sum.df <- as_tibble(f_oc_sum[,c(15,2:5)])
@@ -150,7 +149,7 @@ sum.df %>%
 
 ```
 
-# Table 2. Abundance model output
+# Table 4. Abundance model output
 ```{r}
 sum.df <- as_tibble(f_pc_sum[,c(16,2:4)])
 
@@ -163,7 +162,7 @@ sum.df %>%
 
 ```
 
-# Table 3a. Effect size for Life form Occurrence by Land use
+# Table 5a. Effect size for Life form Occurrence by Land use
 ```{r}
 ## effect size tables Occurrence
 oc_eff_lu <- f_oc_sum[which(!is.na(f_oc_sum$landuse) & !is.na(f_oc_sum$raunk_lf))]
@@ -178,7 +177,7 @@ sum.df %>%
   kable_styling(bootstrap_options = "striped", full_width = T) 
 ```
 
-# Table 3b. Effect size for Life form Occurrence by Climate
+# Table 5b. Effect size for Life form Occurrence by Climate
 ```{r}
 oc_eff_clim <- f_oc_sum[which(!is.na(f_oc_sum$raunk_lf) & f_oc_sum$clim != 0 & f_oc_sum$clim != "species richness")]
 oc_eff_clim$Magnitude <- oc_eff_clim$eff_sz
@@ -192,7 +191,7 @@ sum.df %>%
   kable_styling(bootstrap_options = "striped", full_width = T) 
 ```
 
-## Table 3c. Range within effect sizes
+## Table 5c. Range within effect sizes
 ```{r}
 # d <- f_oc_sum[which(!is.na(f_oc_sum$landuse) & !is.na(f_oc_sum$raunk_lf)),]
 # d$landuse <- factor(d$landuse)
@@ -233,7 +232,7 @@ sum.df %>%
 ```
 
 
-# Table 4a. Magnitude of Effect size for Life form Abundance by Land use
+# Table 6a. Magnitude of Effect size for Life form Abundance by Land use
 ```{r}
 ## effect size tables Abundance
 pc_eff_lu <- f_pc_sum[which(!is.na(f_pc_sum$landuse) & !is.na(f_pc_sum$raunk_lf))]
@@ -248,7 +247,7 @@ sum.df %>%
   kable_styling(bootstrap_options = "striped", full_width = T) 
 ```
 
-# Table 4b. Magnitude of Effect size for Life form Abundance by Climate
+# Table 6b. Magnitude of Effect size for Life form Abundance by Climate
 ```{r}
 pc_eff_clim <- f_pc_sum[which(!is.na(f_pc_sum$raunk_lf) & f_pc_sum$clim != 0 & f_pc_sum$clim != "species richness")]
 pc_eff_clim$Magnitude <- pc_eff_clim$eff_sz
@@ -262,7 +261,7 @@ sum.df %>%
   kable_styling(bootstrap_options = "striped", full_width = T) 
 ```
 
-## Table 4c. Range within effect sizes
+## Table 6c. Range within effect sizes
 ```{r}
 # d <- f_pc_sum[which(!is.na(f_pc_sum$landuse) & !is.na(f_pc_sum$raunk_lf)& f_pc_sum$clim != "species richness"),]
 # d$landuse <- factor(d$landuse)
@@ -303,7 +302,7 @@ sum.df %>%
   kable_styling(bootstrap_options = "striped", full_width = T) 
 ```
 
-# Table 5. Summary statistics for climatic variables
+# Table 7. Summary statistics for climatic variables
 ```{r}
 all_clim_ave <- readRDS("Data_08_all_clim_ave.rds")
 opts <- options(knitr.kable.NA = "")
@@ -314,7 +313,7 @@ sum.df %>%
   kable_styling(bootstrap_options = "striped", full_width = F) 
 ```
 
-# Table 6. Biome averages for climatic variables
+# Table 8. Biome averages for climatic variables
 ```{r}
 biome <- readRDS("Data_08_average_biome_clim_vars.rds")
 
@@ -395,7 +394,7 @@ f_pc_sum$'Model terms'[f_pc_sum$`Model terms` == "0"] <- "Grand Mean"
 ```
 
 
-# Table 7a. Occurrence no species richness model output
+# Table 9a. Occurrence no species richness model output
 ```{r}
 # tables of model outputs
 sum.df <- as_tibble(f_oc_sum[,c(16,2:5)])
@@ -409,7 +408,7 @@ sum.df %>%
 
 ```
 
-# Table 7b. Abundance no species richness model output
+# Table 9b. Abundance no species richness model output
 ```{r}
 sum.df <- as_tibble(f_pc_sum[,c(16,2:4)])
 
@@ -424,6 +423,17 @@ sum.df %>%
 
 
 
+And finally, get all R package citations.
+```{r}
+list <- c("ggdark", "broom.mixed", "cowplot", "gdalUtils", "kableExtra", 
+          "papeR", "xtable", "car", "carData", "ggridges", "gtools", "ggeffects", 
+          "ggpubr", "viridis", "viridisLite", "sjPlot", "data.table", "DHARMa", 
+          "wec", "glmmTMB", "optimx", "lme4", "Matrix", "RColorBrewer", 
+          "rgdal", "raster", "sp", "forcats", "stringr", "dplyr", "purrr", 
+          "readr", "tidyr", "tibble", "ggplot2", "tidyverse", "stats", 
+          "graphics", "grDevices", "utils", "datasets", "methods", "base")
+lapply(list, citation)
+```
 
 
 

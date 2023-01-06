@@ -1,5 +1,5 @@
 ## cleaning BIEN life form levels
-## initally 139 levels which is a joke
+## initally 139 levels which is not great
 ## I want to clean themn to less than 10 classifications and then the combinations thereof
 
 ##to do 

@@ -1,5 +1,5 @@
 ---
-title: "LF_06a_pc_estimates_"
+title: "LF_06a_pc_estimates"
 author: "Caroline McKeon"
 date: "9/17/2020"
 output:
@@ -82,18 +82,6 @@ unscaled_data$animal <- unscaled_data$Best_guess_binomial
 unscaled_data <- droplevels(merge(unscaled_data, PR_pc, by = "Best_guess_binomial",all.x = TRUE)) 
 ```
 
-
-```{r eval=FALSE, include=FALSE}
-mean(mydata$pres_abs)
-logitTransform(mean(mydata$pres_abs))
-for (i in levels(mydata$Predominant_habitat)){
-  print(c(i, length(mydata$Predominant_habitat[mydata$Predominant_habitat == i])))
-}
-
-for (i in levels(mydata$raunk_lf)){
-  print(c(i, length(mydata$raunk_lf[mydata$raunk_lf == i])))
-}
-```
 
 ## Model Estimates
 
@@ -380,28 +368,16 @@ f_pc_sum <- unique(f_pc_sum)
 
 ```{r}
 #get average of estimates that differ at the 3rd decimal place
-f_pc_sum$Estimate[f_pc_sum$rn == "(Intercept)"] <- mean(f_pc_sum$Estimate[f_pc_sum$rn == "(Intercept)"])
-f_pc_sum$eff_sz[f_pc_sum$rn == "(Intercept)"] <- mean(f_pc_sum$eff_sz[f_pc_sum$rn == "(Intercept)"])
-
-f_pc_sum$eff_sz[f_pc_sum$rn == "hab_raunk_interactionx1Young secondary vegetation:x2chamaephyte"] <- mean(
-  f_pc_sum$eff_sz[f_pc_sum$rn == "hab_raunk_interactionx1Young secondary vegetation:x2chamaephyte"])
-
-f_pc_sum$`t value`[f_pc_sum$rn == "map_raunk_interactioninteractphanerophyte"] <- mean(
-  f_pc_sum$`t value`[f_pc_sum$rn == "map_raunk_interactioninteractphanerophyte"])
-
-f_pc_sum$`t value`[f_pc_sum$rn == "mat_var"] <- mean(
-  f_pc_sum$`t value`[f_pc_sum$rn == "mat_var"])
-
-f_pc_sum$`t value`[f_pc_sum$rn == "Predominant_habitat.wecPrimary forest"] <- mean(
-  f_pc_sum$`t value`[f_pc_sum$rn == "Predominant_habitat.wecPrimary forest"])
-
-f_pc_sum$`t value`[f_pc_sum$rn == "Predominant_habitat.wecUrban"] <- mean(
-  f_pc_sum$`t value`[f_pc_sum$rn == "Predominant_habitat.wecUrban"])
-
-f_pc_sum$`t value`[f_pc_sum$rn == "raunk_lf.wecphanerophyte"] <- mean(
-  f_pc_sum$`t value`[f_pc_sum$rn == "raunk_lf.wecphanerophyte"])
-
-f_pc_sum <- unique(f_pc_sum) ## 90 obs of 10 vars
+for (i in levels(factor(f_pc_sum$rn))){
+  if (length(f_pc_sum$rn[f_pc_sum$rn == i]) > 1) {
+  f_pc_sum$Estimate[f_pc_sum$rn == i] <- mean(f_pc_sum$Estimate[f_pc_sum$rn == i])
+  f_pc_sum$Std.Error[f_pc_sum$rn == i] <- mean(f_pc_sum$Std.Error[f_pc_sum$rn == i])
+  f_pc_sum$`t value`[f_pc_sum$rn == i] <- mean(f_pc_sum$`t value`[f_pc_sum$rn == i])
+  f_pc_sum$eff_sz[f_pc_sum$rn == i] <- mean(f_pc_sum$eff_sz[f_pc_sum$rn == i])
+  f_pc_sum$ci[f_pc_sum$rn == i] <- mean(f_pc_sum$ci[f_pc_sum$rn == i])
+  }
+}
+f_pc_sum <- unique(f_pc_sum)
 ```
 
 

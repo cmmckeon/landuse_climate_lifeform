@@ -5,6 +5,15 @@ date: "4/1/2021"
 output: word_document
 ---
 
+## DATA NEEDED:
+
+# Data_ModelDF.rds  - Model dataframe with 624696 obs of 24 variables, created in LF_01_data_handling.R
+# Data_ModelDF_unscaled.rds  - Model dataframe with 624696 obs of 24 variables, created in LF_01_data_handling.R
+
+## the three NO RICHNESS weighted effects coding models for the percent cover data, created in LF_04a_NO_RICH_frequentist_percent_cover.R
+# f_pc_wec_NO_RICH_int_maximal_gauss_logit_nesting_no_P_C.rds
+# f_pc_wec_NO_RICH_int_maximal_gauss_logit_nesting_no_PF_P.rds
+# f_pc_wec_NO_RICH_int_maximal_gauss_logit_nesting_no_U_T.rds
 
 ## set up 
 ```{r set up, echo=FALSE}
@@ -61,7 +70,7 @@ mydata$Measurement <- mydata$Measurement/100
 mydata$response <- scale(logitTransform(mydata$Measurement))
 mydata$animal <- mydata$Best_guess_binomial
 
-PR_pc <- readRDS("Data_PR_f_pc.rds")
+PR_pc <- readRDS("Data_03a_PR_f_pc.rds")
 mydata <- droplevels(merge(mydata, PR_pc, by = "Best_guess_binomial",all.x = TRUE)) 
 
 unscaled_data <- ModelDF_unscaled
@@ -75,27 +84,6 @@ unscaled_data$response <- scale(logitTransform(unscaled_data$Measurement))
 unscaled_data$animal <- unscaled_data$Best_guess_binomial
 
 unscaled_data <- droplevels(merge(unscaled_data, PR_pc, by = "Best_guess_binomial",all.x = TRUE)) 
-```
-
-```{r plotting themes}
-# blank theme
-set_theme(
-  base = theme_classic(),
-  axis.title.size = 2,
-  axis.textsize = 1.2,
-  legend.size = 2,
-  legend.title.size = 2,
-  geom.label.size = 3,
-  plot.margin = margin(3, 5, 1, 5, "pt")
-)
-
-## text editing
-get_wraper <- function(width) {
-  function(x) {
-    lapply(strwrap(x, width = width, simplify = FALSE), paste, collapse="\n")}}
-## colour palett
-cb_pal <- c("#01665e", "#5ab4ac","#c7eae5", "#d8b365", 
-            "#8c510a")
 ```
 
 
@@ -393,20 +381,25 @@ f_pc_sum_c <- f_pc_sum_c[order(-f_pc_sum_c$raunk_lf, f_pc_sum_c$landuse),]
 
 ```{r, eval=FALSE, include=FALSE}
 f_pc_sum <- unique(rbind(f_pc_sum_a, f_pc_sum_b, f_pc_sum_c))
-f_pc_sum$Estimate <- round(f_pc_sum$Estimate, 4)
-f_pc_sum$Std.Error <- round(f_pc_sum$Std.Error, 4)
-f_pc_sum$`t value` <- round(f_pc_sum$`t value`, 4)
-f_pc_sum$eff_sz <- round(f_pc_sum$eff_sz, 4)
-f_pc_sum$ci <- round(f_pc_sum$ci, 4)
+f_pc_sum$Estimate <- round(f_pc_sum$Estimate, 3)
+f_pc_sum$Std.Error <- round(f_pc_sum$Std.Error, 3)
+f_pc_sum$`t value` <- round(f_pc_sum$`t value`, 3)
+f_pc_sum$eff_sz <- round(f_pc_sum$eff_sz, 3)
+f_pc_sum$ci <- round(f_pc_sum$ci, 3)
 f_pc_sum <- unique(f_pc_sum)
 ```
 
-```{r, eval=FALSE, include=FALSE}
-f_pc_sum$Estimate <- round(f_pc_sum$Estimate, 2)
-f_pc_sum$Std.Error <- round(f_pc_sum$Std.Error, 2)
-f_pc_sum$`t value` <- round(f_pc_sum$`t value`, 2)
-f_pc_sum$eff_sz <- round(f_pc_sum$eff_sz, 2)
-f_pc_sum$ci <- round(f_pc_sum$ci, 2)
+```{r}
+#get average of estimates that differ at the 3rd decimal place
+for (i in levels(factor(f_pc_sum$rn))){
+  if (length(f_pc_sum$rn[f_pc_sum$rn == i]) > 1) {
+  f_pc_sum$Estimate[f_pc_sum$rn == i] <- mean(f_pc_sum$Estimate[f_pc_sum$rn == i])
+  f_pc_sum$Std.Error[f_pc_sum$rn == i] <- mean(f_pc_sum$Std.Error[f_pc_sum$rn == i])
+  f_pc_sum$`t value`[f_pc_sum$rn == i] <- mean(f_pc_sum$`t value`[f_pc_sum$rn == i])
+  f_pc_sum$eff_sz[f_pc_sum$rn == i] <- mean(f_pc_sum$eff_sz[f_pc_sum$rn == i])
+  f_pc_sum$ci[f_pc_sum$rn == i] <- mean(f_pc_sum$ci[f_pc_sum$rn == i])
+  }
+}
 f_pc_sum <- unique(f_pc_sum)
 ```
 
@@ -428,5 +421,5 @@ f_pc_sum <- readRDS("f_pc_NO_RICH_sum.rds")
 f_pc_sum <- f_pc_sum[order(-f_pc_sum$raunk_lf, f_pc_sum$landuse),]
 f_pc_sum$land_av <- 0
 f_pc_sum$land_av[which(is.na(f_pc_sum$raunk_lf) & !is.na(f_pc_sum$landuse))] <- 1
-
+#saveRDS(f_pc_sum, "f_pc_NO_RICH_sum.rds")
 ```

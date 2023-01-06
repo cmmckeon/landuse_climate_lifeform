@@ -3,9 +3,6 @@
 # date started: "18/6/2019"
 # last updated: "03/04/2020"
 
-## to do:
-
-
 ## This is the cluster runnable script for obtaining, manipulating, cleaning and 
 ## aggregating the data to be used in the modeling dataset for investigating how Raunkiaerian Life Form affects 
 ## plant population responses to human land use and climate. Also creates some overview plots.
@@ -13,32 +10,53 @@
 ## DATA NEEDED:
 
 # Data_01_PR_plantDiversityCorr.rds  - plant data from PREDICTS project: a global dataset of local biodiversity responses to land-use (Hudson et al., 2016)
-## obtained from PREDICTS team in 2017
+## obtained from PREDICTS team in 2017. Also eeded to create the taxonomy
 # Data_01_sitediversityData.rds - site level species diversity data, calculated by PREDICTS team in 2017
-# Data_01_try_species_info.csv - TRY plant trait database species info (version 5)
-# Data_01_trait_info_try.csv - TRY plant trait database trait info (version 5)
-# Data_01_lifeform_try.txt - TRY plant trait database lifeform data (version 5)
 
 # Data_01_sp.list_BIEN.rds -BIEN plant database species list, obtained in 2019 using lines 75-101
 # Data_01_lifeform_bien.rds - BIEN plant database lifeform data, obtained in 2019 using lines 75-101
 
-## bioclim variables from WorldClim version 1.4 - statistical summaries of climatic variables as static spatial bioclimatic variables at 30 second resolution, 
+
+## Large files to download separately  
+
+## bioclim variables from WorldClim version 1.4 - statistical summaries of climatic variables as static spatial bioclimatic variables at 5 minute resolution, 
 ## calculated using monthly records for temperature and rainfall from 1970-2000 (Fick & Hijmans, 2017). 
-# bio1.bil ## mean annual temperature (C*10)
+# https://www.worldclim.org/data/v1.4/formats.html 
+
+# bio1.bil ## mean annual temperature (C*10) 
 # bio12.bil ## mean annual precipatation (mm)
 # bio15.bil ## mean annual precip coeff variation
 # bio4.bil ## mean annual temp SD*100
+
+# TRY - https://www.try-db.org/TryWeb/Home.php
+# Data_01_try_species_info.csv - TRY plant trait database species info (version 5) 
+# Data_01_trait_info_try.csv - TRY plant trait database trait info (version 5) 
+# Data_01_lifeform_try.txt - TRY plant trait database lifeform data (version 5) 
+
+# Human footprint data
+# Data_01_wildareas-v3-2009-human-footprint-geotiff/wildareas-v3-2009-human-footprint.tif from SEDAC's Last of the Wild Project, 
+# Version 3 (LWP-3): 2009 Human Footprint, 2018 Release. (Venter et al 2018) https://sedac.ciesin.columbia.edu/data/set/wildareas-v3-2009-human-footprint/data-download
+# this data is no longer used as a variable, but retained as it has a small on affect the creation of the final model dataframe
+# (same final number of species, but changes the number of sites slightly, and so it is being kept in for reproducibility)
+
+## Other large files to be downloaded now for use in later scripts
+
+# Biomes data - https://ecotope.org/files/anthromes/v2/data/base_data/anthromes_2_base_data_GeoTIFF.zip
+# Data_08_anthromes_2_base_data_GeoTIFF/potveg.tif from Ellis et al. (2010) after Ramankutty, N. and J. A. Foley. 1999.
+
+# Ecoregion data - https://www.worldwildlife.org/publications/terrestrial-ecoregions-of-the-world 
+# Data_08_official/wwf_terr_ecos files from data on ecoregion based on Olson et al. (2001). 
+
 
 ## Set up
 #install.packages(c("tidyverse", "raster", "rgdal", "RColorBrewer"))
 library(tidyverse)
 library(raster)
 library(rgdal)
-library(RColorBrewer)
+library(RColorBrewer) 
 
 ## create "not in" operator
 '%nin%' = Negate('%in%')
-
 
 ##### Part 1: Get Species lists#######################
 
@@ -68,7 +86,7 @@ sp.list_TRY <- Reduce(intersect, list(unique(sp.info_try$AccSpeciesName),unique(
 ## * if you get errors connecting to server it is because the trinity network blocks SQL connections. 
 ## Hotspot or try another network and should work fine. 
 
-# bien_sp <- BIEN_list_all() ## 331065 obs of 1 var
+# bien_sp <- BIEN_list_all() ## 331065 obs of 1 var, obtained Januray 2019
 # sp.list_BIEN <- Reduce(intersect, list(unique(bien_sp$species),unique(PR$Best_guess_binomial))) ## 10080 speices
 #saveRDS(sp.list_BIEN, "Data_sp.list_BIEN.rds")
 
@@ -140,11 +158,6 @@ lifeform_try <- read.delim("Data_01_lifeform_try.txt", quote = "")
 
 #names(lifeform_try)
 
-
-# So I think I got more data than I asked for...
-# There are 800+ levels in "DataNames" when there should be 6.
-
-
 ## get progress messages
 print("***Finished reading TRY life form data (large file)***")
 print("***Finished reading species list and traits***")
@@ -193,7 +206,7 @@ length(unique(raunk5$AccSpeciesName)) ## 11337 species
 #pgf$OrigValueStr %>% levels(.)
 
 ## initially 1442 levels yikes
-source("cleaning_try.lifeform.R") ## not cleaning that well, but should be able to use some of the 
+source("cleaning_try.lifeform.R") ##  but should be able to use some of the 
 ## more obvious (and luckily data heavy) levels
 
 ## add life forms from "non-raunkiear" life form try data
@@ -213,23 +226,12 @@ names(bien_lfs)[names(bien_lfs) == c("scrubbed_species_binomial", "trait_value")
 lifeform <- rbind(lifeform, bien_lfs) ## 40499 unique species
 lifeform$raunk_lf[lifeform$raunk_lf == "geophyte" |lifeform$raunk_lf == "hydrophyte"] <- "cryptophyte"
 
-## Create new column detailing how many life form catergories have been entered in try for each species
-# for (i in unique(lifeform$AccSpeciesName)){
-#   lifeform$numberlifeforms[lifeform$AccSpeciesName ==i] <- length(unique(levels(factor(lifeform$raunk_lf[lifeform$AccSpeciesName ==i]))))
-# }
-# ## pretty much all species are entered as only having 1 life form so not that usable as a variable
-# length(unique(lifeform$AccSpeciesName[lifeform$numberlifeforms !=1]))
-# length(unique(lifeform$AccSpeciesName[lifeform$numberlifeforms ==1]))
-#write_csv(lifeform, "Data_lifeform.csv")
-
-
 ## get progress messages
 print("***Finished cleaning species list and traits data***")
 print("***Starting preparing additional variables***")
 
 
 ### Part 4: Prepare additional variables ################
-
 
 ## Bioclim
 
@@ -286,7 +288,7 @@ names(full_clim) <- c("map", "mat", "map_var", "mat_var","Longitude", "Latitude"
 ## should now have df with 4285 obs of 6 variables, corresponding to the 
 ## latitude and longtitude of the 4 climate variables to be used in modelling for PREDICTS data
 
-plot(full_clim)
+#plot(full_clim)
 #plot(clim_map)
 
 ## Site diversity
@@ -301,8 +303,7 @@ Site_Div <- Site_Div %>% .[.$SSBS %in% unique(PR$SSBS),]
 Site_Div <- droplevels(Site_Div)
 Site_Div <-unique(Site_Div) ## 4002 obs. of 11 vars
 
-## for now, keep only species richness, total abundance and simpson's diverity from site level diveristy variables
-## leaving out total abundance for now as what does this mean? and when it's included I can't investigate occurrence data as there is none for occurrence 
+## for now, keep only species richness from site level diveristy variables
 Site_Div <- Site_Div %>% .[, which(names(.) %in% c("SSBS",# "Total_abundance", 
                                                    "Species_richness"#, "Simpson_diversity"
 ))]
@@ -320,7 +321,7 @@ hf <- raster("Data_01_wildareas-v3-2009-human-footprint-geotiff/wildareas-v3-200
 #   http://www.nickeubank.com/wp-content/uploads/2015/10/RGIS3_MakingMaps_part2_mappingRasterData.html 
 # https://rspatial.org/raster/spatial/8-rastermanip.html
 
-## Map human footprint dataa
+## Map human footprint data
 pal <- colorRampPalette(c('#0C276C', '#3B9088', '#EEFF00', '#ffffff'))
 hf_map <- calc(hf, fun=function(x){ x[x > 100] <- NA; return(x)} )
 par(bty = "n", mar=c(0.02,0.02,2,0.2))
@@ -339,21 +340,20 @@ hf_repro <- projectRaster(hf, clim_map)
 ## So removing those high values, as that might be stopping models with human footprint from converging. 
 
 ## Quick visualisation inspection to be sure it worked
-map
-hf_repro
-
+#map
+#hf_repro
 
 #hf_repro_map <- calc(hf_repro, fun=function(x){ x[x > 100] <- NA; return(x)} )
-plot(hf_repro, col = pal(50))
-plot(map,col = pal(50))
+#plot(hf_repro, col = pal(50))
+#plot(map,col = pal(50))
 
-## Successful, but gives a huge drop in resolution
+## Successful, but gives a drop in resolution
 
 ## Show sites in relation to human footprint
 par(bty = "n", mar=c(0.02,0.02,2,0.2))
 hf_repro_map <- calc(hf_repro, fun=function(x){ x[x > 100] <- NA; return(x)} )
-plot(hf_repro_map, col = pal(50), main = "Sites and Human footprint", yaxt="n", xaxt="n")
-points(PR_co$Longitude, PR_co$Latitude, type = "p", col = "orange")
+#plot(hf_repro_map, col = pal(50), main = "Sites and Human footprint", yaxt="n", xaxt="n")
+#points(PR_co$Longitude, PR_co$Latitude, type = "p", col = "orange")
 
 
 ## Handle raster human footprint data so it can be added to modeling dataframe
@@ -439,10 +439,37 @@ ModelDF <- ModelDF[, which(names(ModelDF) %nin% c("pc_binary", "ab_binary", "oc_
 ModelDF$raunk_lf <- factor(ModelDF$raunk_lf , 
                       levels = c("phanerophyte","chamaephyte", "hemicryptophyte", "cryptophyte", 
                                  "therophyte"))
-#saveRDS(ModelDF, "Data_ModelDF_unscaled.rds")
+saveRDS(ModelDF, "Data_ModelDF_unscaled.rds")
 ModelDF <- ModelDF[, which(names(ModelDF) %nin% c("map_unscaled", "map_var_unscaled", 
                                                   "Species_richness_unscaled", "mat_unscaled", "mat_var_unscaled"))]
-#saveRDS(ModelDF, "Data_ModelDF.rds")
+saveRDS(ModelDF, "Data_ModelDF.rds")
+
+## make subsets of the data that have phylogenetic information for both occurrence and abundance models 
+## (these are smaller, neater objects that just loading the full dataframe - saves space on the cluster)
+## abundance data phylogeny subset
+if(!exists("PR_pc")) {
+  if(file.exists("Data_03a_PR_f_pc.rds")) {
+    try(PR_pc <- readRDS("Data_03a_PR_f_pc.rds"))
+  } else try(
+    {PR <- readRDS("Data_01_PR_plantDiversityCorr.rds")
+    levels(PR$Best_guess_binomial) <- gsub(" ", "_", levels(PR$Best_guess_binomial))
+    PR <- PR[PR$Best_guess_binomial %in% mydata$Best_guess_binomial,]
+    PR_pc <- unique(PR[, which(names(PR) %in% c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus",
+                                                         "Best_guess_binomial"))])
+    saveRDS(PR_pc,"Data_03a_PR_f_pc.rds")})
+}
+## occurrence data phylogeny subset
+if(!exists("PR_oc")) {
+  if(file.exists("Data_03b_PR_f_oc.rds")) {
+    try(PR_oc <- readRDS("Data_03b_PR_f_oc.rds"))
+  } else try(
+    {PR <- readRDS("Data_01_PR_plantDiversityCorr.rds")
+    levels(PR$Best_guess_binomial) <- gsub(" ", "_", levels(PR$Best_guess_binomial))
+    PR <- PR[PR$Best_guess_binomial %in% mydata$Best_guess_binomial,]
+    PR_oc <- unique(PR[, which(names(PR) %in% c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus",
+                                                "Best_guess_binomial"))])
+    saveRDS(PR_oc, "Data_03b_PR_f_oc.rds")})
+}
 
 
 ## Quick look at model dataframe

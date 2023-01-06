@@ -1,9 +1,6 @@
 ## cleaning TRY life form (NOT named as raunkiear) levels
-## initally 1442 levels which is a joke
+## initally 1442 levels which coudl be better
 ## I want to clean themn to less than 10 classifications and then the combinations thereof
-
-##to do 
-# remove objects created by this script
 
 ## name the life form dataset "mydata"
 mydata <- pgf

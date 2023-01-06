@@ -5,6 +5,21 @@ date: "10/19/2021"
 output: word_document
 ---
 
+## DATA NEEDED:
+
+# f_oc_sum - dataframe of results from occurrence model object - created in LF_06b_oc_estimates.R
+# f_pc_sum - dataframe of results from abundance model object - created in LF_06a_pc_estimates.R
+
+# Data_ModelDF.rds  - Model dataframe with 624696 obs of 24 variables, created in LF_01_data_handling.R
+
+# Data_08_anthromes_2_base_data_GeoTIFF/potveg.tif data from Ellis et al. (2010)
+# Data_08_average_biome_clim_vars.rds created in LF_08_clim_biome_ecoregion.Rmd
+# Data_08_average_ecoregion_clim_vars.rds created in LF_08_clim_biome_ecoregion.Rmd
+
+# Data_08_sd_model_clim_data.rds created in LF_08_clim_biome_ecoregion.Rmd
+# Data_08_average_biome_diffs.rds created in LF_08_clim_biome_ecoregion.Rmd
+# Data_08_average_ecoregion_diffs.rds created in LF_08_clim_biome_ecoregion.Rmd
+
 ```{r include=FALSE}
 library(tidyverse)
 library(broom.mixed)
@@ -21,8 +36,10 @@ library(kableExtra)
 library(data.table)
 library(cowplot)
 library(ggdark)
+library(raster)
 knitr::opts_chunk$set(echo = FALSE, warning=FALSE, message = FALSE,
 	fig.height = 8, fig.width = 12)
+'%nin%' = Negate('%in%')
 ```
 
 ```{r plotting themes}
@@ -120,22 +137,41 @@ ModelDF$Predominant_habitat <- factor(ModelDF$Predominant_habitat,
                       levels = c("Primary forest", "unknown Secondary",  "Mature secondary", 
                                  "Intermediate secondary", "Young secondary",
                                  "Plantation forest", "Primary non-forest", "Pasture", "Cropland", "Urban"))
+
+## get percent cover data for sample sizes table
+mydata <- ModelDF
+
+## handle model dataframe to get just percent cover data, with species levels in the right format
+levels(ModelDF$Best_guess_binomial) <- gsub(" ", "_", levels(ModelDF$Best_guess_binomial))
+mydata <- ModelDF[ModelDF$Diversity_metric == "percent cover", ]
+mydata <- mydata[mydata$Measurement !=0,]
+mydata <- unique(mydata)
 ```
 
-*Supplementary Information for “Land use and climate affect plant occurrence and abundance across life forms”*
+*Supplementary Figures for “Land use and climate affect plant occurrence and abundance across life forms”*
 
-## Appendix S1 – Table of data sources 
+## whitakers biomes with my data (I had it somehwere else but can't find)
+```{r}
+#whitakers <- unique(ModelDF[,c("raunk_lf", "map", "mat", "pres_abs")])
+#whitakers <- unique(whitakers[whitakers$pres_abs == 1,])
+
+# ggplot(whitakers, aes(mat, map, colour = raunk_lf)) +
+#   geom_jitter(position = position_dodge(0.02),
+#              size = 2, alpha = 0.8) +
+#     scale_color_viridis(discrete = TRUE) #+ facet_wrap( ~ raunk_lf)
+  
+```
 
 
-## Appendix S2 – Map of data origins 
+## Map of data origins 
 
-```{r, fig.height = 16, fig.width = 24}
-source("plot_enviro_pca.R")
+```{r fig.height=16, fig.width= 18}
+#source("plot_enviro_pca.R")
 biome_rast <- raster("Data_08_anthromes_2_base_data_GeoTIFF/potveg.tif")
 biome_rast <- calc(biome_rast, fun=function(x){ x[x <= 0] <- NA; return(x)} )
   par(bg= "black", bty = "l", col="white", col.main = "white", col.lab = "white", col.axis = "white")
-plot(biome_rast, col=viridis_pal(option="C")(900))
-  points(full_clim[, 'Longitude'], full_clim[,'Latitude'], pch = 21, col = "green", cex = 2)
+# plot(biome_rast, col=viridis_pal(option="C")(900))
+#   points(full_clim[, 'Longitude'], full_clim[,'Latitude'], pch = 21, col = "green", cex = 2)
 ```
 
 ```{r fig.height = 8, fig.width = 10}
@@ -195,16 +231,52 @@ lu <- lu + theme(axis.title.x = element_blank(), axis.title.y = element_blank(),
 lu2 <- lu2 + theme(axis.title.y = element_blank()) 
 raunk <- raunk + theme(axis.text.x = element_blank(), axis.title.x = element_blank(),
                          axis.ticks.x = element_blank(), axis.title.y = element_blank())
-raunk2 <- raunk2 + theme(axis.title.y = element_blank())
+raunk2 <- raunk2 + theme(axis.title.y = element_blank()) 
 
 resp <- ggarrange(lu, raunk, lu2, raunk2,  nrow = 2, ncol = 2, align = "hv", heights = c(2, 1)) + theme(plot.margin = margin(0.1,0.1,0.1,0.1, "cm"))
 annotate_figure(resp, #top = text_grob("Relative proportions of model data", face = "bold", size = 20),
                 left = text_grob("Count", size = 15, rot = 90))
 ```
 
-## Appendix S4 – Data validation extended methods 
+```{r eval=FALSE, include=FALSE}
+sample_sizes <- as.data.frame(t(c(1:3)))
+for (i in levels(ModelDF$Predominant_habitat)){
+  for (j in levels(ModelDF$raunk_lf)){
+  sample_sizes <- rbind(sample_sizes, c(i,j, length(ModelDF$Predominant_habitat[ModelDF$Predominant_habitat == i & ModelDF$raunk_lf == j])))
+  }}
+names(sample_sizes) <- c("Land use", "Life form", "Occurrence sample size")
 
-## Appendix S5 – Biome and Ecoregion visual summaries
+for (i in levels(ModelDF$Predominant_habitat)){
+  for (j in levels(ModelDF$raunk_lf)){
+sample_sizes$'Abundance sample size'[sample_sizes$`Land use` == i & sample_sizes$`Life form` == j] <-
+  length(mydata$Predominant_habitat[mydata$Predominant_habitat == i & mydata$raunk_lf == j])
+}}
+
+sum.df <- as_tibble(sample_sizes[-1,])
+sum.df %>%
+  kable(booktabs = T, caption = "Table 10. Model sample sizes") %>%
+  kable_styling(bootstrap_options = "striped", full_width = T) %>%
+  kable_styling(font_size = 10)
+```
+
+```{r eval=FALSE, include=FALSE}
+sample_sizes <- as.data.frame(t(c(1:3)))
+for (i in levels(mydata$Predominant_habitat)){
+  for (j in levels(mydata$raunk_lf)){
+  sample_sizes <- rbind(sample_sizes, c(i,j, length(mydata$Predominant_habitat[mydata$Predominant_habitat == i & mydata$raunk_lf == j])))
+  }}
+names(sample_sizes) <- c("Land use", "Life form", "Sample size")
+
+sum.df <- as_tibble(sample_sizes[-1,])
+sum.df %>%
+  kable(booktabs = T, caption = "Table 10b. Abundance model sample sizes") %>%
+  kable_styling(bootstrap_options = "striped", full_width = T) %>%
+  kable_styling(font_size = 10)
+```
+
+## Data validation extended methods 
+
+## Biome and Ecoregion visual summaries
 ```{r fig.height = 4, fig.width = 10}
 biome <- readRDS("Data_08_average_biome_clim_vars.rds")
 
@@ -243,14 +315,14 @@ annotate_figure(resp, top = text_grob("Ecoregion averages for climatic variables
 
 ```
 
-```{r}
+```{r fig.height = 6.5, fig.width = 9}
 data <- readRDS("Data_08_sd_model_clim_data.rds")
 biome_diff <- readRDS("Data_08_average_biome_diffs.rds")
 eco_diff <- readRDS("Data_08_average_ecoregion_diffs.rds")
 vars <- c("map", "mat", "map_var", "mat_var")
 
 ## plot comparison of average differences with 1 sd in model data
-par(mfrow =c(3,4), mar=c(2,2,2,2))
+par(mfrow =c(3,4), mar=c(3,2,3,2))
 
 for(i in names(data[,which(names(data) %in% vars)])){
   par(bty = "l")
@@ -258,10 +330,10 @@ for(i in names(data[,which(names(data) %in% vars)])){
        breaks = 300,
        border = "grey", ylab = NULL, xlab = NULL,main = NULL, freq = F)
   lines(density(data[,i]))
-  abline(v=mean(data[,i]),col="red", lwd = 2)
-  abline(v=median(data[,i]),lty=2,col="red", lwd = 2)
-  abline(v = mean(data[,i])+sd(data[,i]), lty = 1, col = "blue", lwd = 2)
-  abline(v = mean(data[,i])-sd(data[,i]), lty = 1, col = "blue", lwd = 2)}
+  abline(v=mean(data[,i]),col="black", lwd = 2)
+  abline(v=median(data[,i]),lty=2,col="black", lwd = 2)
+  abline(v = mean(data[,i])+sd(data[,i]), lty = 1, col = "#A715AD", lwd = 2)
+  abline(v = mean(data[,i])-sd(data[,i]), lty = 1, col = "#A715AD", lwd = 2)}
 
 for(i in names(biome_diff[,which(names(biome_diff) %in% vars)])){
   par(bty = "l")
@@ -269,9 +341,9 @@ for(i in names(biome_diff[,which(names(biome_diff) %in% vars)])){
        breaks = 300, 
        border = "grey",ylab = NULL, xlab = NULL, main = NULL, freq = F)
   lines(density(biome_diff[,i]))
-    abline(v=mean(biome_diff[,i]),col="red", lwd = 2)
-  abline(v=median(biome_diff[,i]),lty=2,col="red", lwd = 2)
-  abline(v = sd(data[,i]), lty = 1, col = "blue", lwd = 2)}
+    abline(v=mean(biome_diff[,i]),col="black", lwd = 2)
+  abline(v=median(biome_diff[,i]),lty=2,col="black", lwd = 2)
+  abline(v = sd(data[,i]), lty = 1, col = "#A715AD", lwd = 2)}
 
 for(i in names(eco_diff[,which(names(eco_diff) %in% vars)])){
   par(bty = "l")
@@ -279,29 +351,347 @@ for(i in names(eco_diff[,which(names(eco_diff) %in% vars)])){
        breaks = 300,
        border = "grey", ylab = NULL,main = NULL, xlab = paste(i), freq = F)
   lines(density(eco_diff[,i]))
-    abline(v=mean(eco_diff[,i]),col="red", lwd = 2)
-  abline(v=median(eco_diff[,i]),lty=2,col="red", lwd = 2)
-  abline(v = sd(data[,i]), lty = 1, col = "blue", lwd = 2)}
+    abline(v=mean(eco_diff[,i]),col="black", lwd = 2)
+  abline(v=median(eco_diff[,i]),lty=2,col="black", lwd = 2)
+  abline(v = sd(data[,i]), lty = 1, col = "#A715AD", lwd = 2)}
 
 ```
 
-## Appendix S6 – Effect size visual explanation
 
-## Appendix S7 – Extended references list
+## within study locations
+```{r}
+w <- ModelDF[, c("Longitude", "Latitude", "SSBS", "Best_guess_binomial", "Study_name", "Region", "Predominant_habitat", "Country", "Biome",  "SS", "SSS", "SSB", "raunk_lf",  "map", "mat", "map_var", "mat_var",  "pres_abs")]
+#ss <- unique(w[, c("SS", "Biome")])
+ss <- unique(w[, c("SS", "Longitude", "Latitude")])
+length(unique(ss$SS))
+##  SS is unique in region, 75 countries (unique bar 2), 76 biomes (unique bar 3)
+```
 
-
-
-
-
-
-
-
-
-
-
-
-
+```{r}
+x <- unique(ModelDF[,c("SS", "Region")])
+table(x$Region)
+```
 
 
 
+```{r}
+plot(biome_rast)
+points(ss$Longitude, ss$Latitude)
+
+```
+```{r}
+ss$island <- 1:length(ss$SS)
+names(ss) <- c("SS", "x", "y", "island")
+
+```
+
+## get distances  between all locations within each study
+```{r}
+library(gdistance)
+library(fasterize)
+library(sf)
+library(sp)
+library(igraph)
+library(lwgeom)
+library(units)
+library(geodist)
+library(rgeos)
+library(geosphere)
+library(sfheaders)
+library(rlist)
+
+get_all_dist <- function(avi_labeled){
+  ## calculate geodesic distance between all co-ordinates in dataframe 
+  ## i.e. distance matrix for all points on island perimeters
+  all_dist <- as.data.frame(geodist(avi_labeled[,which(names(avi_labeled) %in% c("x", "y"))],
+                                  paired = FALSE,
+                                  sequential = FALSE,
+                                  pad = FALSE,
+                                  measure = "geodesic"))
+  ## relabel the distance matrix, so each distance is assocciated with points it is between
+  all_dist <- cbind(avi_labeled$island,all_dist)
+  names(all_dist) <- c("island", avi_labeled$island)
+  ## get only lower triangle to avoid repitition
+  all_dist[lower.tri(all_dist,diag=TRUE)] <- NA
+  all_dist[all_dist==0]<-NA
+  all_dist$island <- avi_labeled$island
+  return(all_dist)}
+
+
+all_dist <- list()
+for(i in ss$SS){
+  all_dist[[i]] <- get_all_dist(avi_labeled = ss[ss$SS == i,])
+  }
+```
+
+## turn into dataframes
+```{r}
+for(j in 1:length(all_dist)){
+  dists <- all_dist[[j]]
+  inds <- as.data.frame(dists[,c(2, 1)])
+  names(inds) <- c("dist", "spot")
+  
+  for (i in names(dists[which(names(dists) != "island")])){
+  c <- as.data.frame(cbind(dists[,i], i))
+  names(c) <- c("dist", "spot")
+  inds <- rbind(inds, c)
+  inds <- drop_na(inds)
+  }
+  all_dist[[j]] <- inds}
+
+```
+
+## get mean and maxium distances between sites within study
+```{r}
+c$mean <- 0
+c$len <- 0
+c <- c[0,]
+names(c) <- c("ss", "max", "mean", "len")
+for(j in names(all_dist)){
+  d <- as.data.frame(cbind(j, max(as.numeric(as.character(all_dist[[j]]$dist)))/1000))
+  d$mean <- mean(as.numeric(as.character(all_dist[[j]]$dist)))/1000
+  d$len <- length(all_dist[[j]]$dist)
+  names(d) <- c("ss", "max", "mean", "len")
+  c <- rbind(c, d)
+}
+
+c$max <- as.numeric(as.character(c$max))
+c$max[which(is.infinite(c$max))] <- 0
+c$mean <- as.numeric(as.character(c$mean))
+c$mean[which(is.infinite(c$mean))] <- 0
+
+c$t <- as.numeric(as.character(c$mean))*c$len
+sum(c$t)/sum(c$len)
+```
+
+```{r, fig.width= 5, fig.height=3}
+par(mfrow = c(1,2))
+c <- drop_na(c)
+hist(c$max, breaks = 30, xlab = "maximum distance between sites in studies (km)")
+abline(v = mean(c$max), col = "red")
+
+hist(c$mean, breaks = 30, xlab = "mean distance between sites in studies (km)", ylab = "")
+abline(v = mean(c$mean), col = "red")
+```
+
+
+## plot to explore
+```{r}
+par(mfrow = c(1,2))
+far <- ss[ss$SS == "SH1_2013__Peri 1",]
+x <- crop(biome_rast, extent(-90, -60,  -60, -40))
+plot(biome_rast)
+points(far$x, far$y)
+plot(x)
+points(far$x, far$y)
+```
+
+
+```{r}
+par(mfrow = c(1,2))
+far <- ss[ss$SS == "DL1_2012__Siebert 1",]
+x <- crop(biome_rast, extent(20, 40,  -50, -10))
+plot(biome_rast)
+points(far$x, far$y)
+plot(x)
+points(far$x, far$y)
+```
+```{r}
+par(mfrow = c(1,2))
+far <- ss[ss$SS == "VB1_2013__Albrecht 1",]
+x <- crop(biome_rast, extent(5, 17,  40, 50))
+plot(biome_rast)
+points(far$x, far$y)
+plot(x)
+points(far$x, far$y, cex = 0.8)
+```
+
+
+```{r}
+x <- unique(ModelDF[, c("Longitude", "Latitude", "Region",  "Predominant_habitat","Country", "Biome", 
+                 "SS", "SSS","SSBS", "SSB", #"raunk_lf", 
+                 "map", "mat", "map_var", "mat_var")])
+
+```
+
+```{r}
+for(i in unique(x$Region)){
+  print(i)
+  print(length(unique(x$SSBS[x$Region == i])))
+}
+```
+
+```{r fig.width= 7, fig.height=4}
+y <- unique(ModelDF[, c("Region",  "Predominant_habitat","Country", "Biome", 
+                 "SS"#, "SSBS"
+                 )])
+
+ggplot(y, aes(x=Region)) +
+    geom_bar(aes(x=Region),  fill = "white", size=1, alpha = 1, show.legend = F) +
+  geom_bar(data = y, 
+               aes(x=Region),  size=1, alpha = 1, show.legend = F) +
+       theme(axis.text.x = element_text(angle = 45, vjust = 0.5)) +
+               scale_x_discrete(labels = get_wraper(10)) +
+  labs(title = "A", x = "Region", y = "Studies") 
+
+ggplot(x, aes(x=Region)) +
+    geom_bar(aes(x=Region),  fill = "white", size=1, alpha = 1, show.legend = F) +
+  geom_bar(data = x, 
+               aes(x=Region),  size=1, alpha = 1, show.legend = F) +
+       theme(axis.text.x = element_text(angle = 45, vjust = 0.5)) +
+               scale_x_discrete(labels = get_wraper(10)) +
+  labs(title = "B", x = "Region", y = "Sites") 
+
+ggplot(y, aes(x=Biome)) +
+    geom_bar(aes(x=Biome),  fill = "white", size=1, alpha = 1, show.legend = F) +
+  geom_bar(data = y, 
+               aes(x=Biome),  size=1, alpha = 1, show.legend = F) +
+       theme(axis.text.x = element_text(angle = 45, vjust = 0.5)) +
+               scale_x_discrete(labels = get_wraper(10)) +
+  labs(title = "A", x = "Biome") 
+```
+
+## prep data to demonstrate level of land use - climate independance
+```{r}
+x <- ModelDF
+
+y <- as.data.frame(cbind(levels(x$Predominant_habitat), 
+                         sample(unique(as.numeric(x$Predominant_habitat)/2.5 -1), 10, replace = F),
+                         sample(unique(as.numeric(x$Predominant_habitat)/2.5 -1), 10, replace = F),
+                         sample(unique(as.numeric(x$Predominant_habitat)/2.5 -1), 10, replace = F),
+                         sample(unique(as.numeric(x$Predominant_habitat)/2.5 -1), 10, replace = F)))
+
+x <- merge(x, y, by.x = "Predominant_habitat", by.y = "V1")
+
+for(i in levels(factor(x$V2))){
+    print(i)
+    x$m_cor[x$V2 == i] <- rnorm(length(x$V2[x$V2 == i]), unique(as.numeric(x$V2[x$V2 == i])), 0.1)
+     x$p_cor[x$V3 == i] <- rnorm(length(x$V3[x$V3 == i]), unique(as.numeric(x$V3[x$V3 == i])), 0.1)
+      x$mv_cor[x$V4 == i] <- rnorm(length(x$V4[x$V4 == i]), unique(as.numeric(x$V4[x$V4 == i])), 0.1)
+       x$pv_cor[x$V5 == i] <- rnorm(length(x$V5[x$V5 == i]), unique(as.numeric(x$V5[x$V5 == i])), 0.1)
+}
+par(mfrow =c(2,2))
+plot(x$m_cor ~ x$Predominant_habitat)
+plot(x$p_cor ~ x$Predominant_habitat)
+plot(x$mv_cor ~ x$Predominant_habitat)
+plot(x$pv_cor ~ x$Predominant_habitat)
+
+## make the completely independant example
+x$bin <- as.numeric(x$Predominant_habitat)/2.5 -1
+
+    x$m_ind <- rnorm(length(x$V2), mean(x$bin), 0.1)
+     x$p_ind <- rnorm(length(x$V3), mean(x$bin), 0.1)
+      x$mv_ind <- rnorm(length(x$V4), mean(x$bin), 0.1)
+       x$pv_ind <- rnorm(length(x$V5), mean(x$bin), 0.1)
+
+confounded <- x
+
+```
+
+
+
+## prep data for ridge plots
+```{r}
+x <- unique(ModelDF[, c("Longitude", "Latitude", "Region",  "Predominant_habitat","Country", "Biome", 
+                 "SS", "SSS","SSBS", "SSB", #"raunk_lf", 
+                 "map", "mat", "map_var", "mat_var")])
+
+mdf <- x %>% .[, which(names(.) %in% c("Predominant_habitat", "map", "mat", "map_var", "mat_var"))] 
+
+covars <- c("map", "map_var",  "mat", "mat_var")
+
+mdf3 <- data.frame()
+
+for(i in covars){
+  mdf$covars <-paste(i)
+mdf2 <-mdf
+mdf3 <- rbind(mdf3, mdf2)}
+
+mdf <- mdf3
+rm(mdf2, mdf3)
+
+for(i in covars){
+mdf$cont_value[mdf$covars == i] <- mdf[,i][mdf$covars == i]}
+
+mdf <- mdf %>% .[, which(names(mdf) %nin% c( "map", "mat", "map_var", "mat_var"))]
+
+```
+
+```{r fig.width= 5, fig.height=3}
+ggplot(mdf, aes(x=cont_value, y=Predominant_habitat)) + 
+    labs(title = "Land use data across climates", y = "Land use type", x = "") +
+  geom_density_ridges2(alpha = .3) + facet_grid(.~covars, scales='free') 
+
+
+```
+
+## very correlated example
+```{r}
+x <- unique(confounded[, c("Longitude", "Latitude", "Region",  "Predominant_habitat","Country", "Biome", 
+                 "SS", "SSS","SSBS", "SSB", #"raunk_lf", 
+                 "m_cor", "p_cor", "mv_cor", "pv_cor")])
+
+mdf <- x %>% .[, which(names(.) %in% c("Predominant_habitat", "m_cor", "p_cor", "mv_cor", "pv_cor"))] 
+
+covars <- c("m_cor", "p_cor", "mv_cor", "pv_cor")
+
+mdf3 <- data.frame()
+
+for(i in covars){
+  mdf$covars <-paste(i)
+mdf2 <-mdf
+mdf3 <- rbind(mdf3, mdf2)}
+
+mdf <- mdf3
+rm(mdf2, mdf3)
+
+for(i in covars){
+mdf$cont_value[mdf$covars == i] <- mdf[,i][mdf$covars == i]}
+
+mdf <- mdf %>% .[, which(names(mdf) %nin% c("m_cor", "p_cor", "mv_cor", "pv_cor"))]
+
+```
+
+```{r fig.width= 5, fig.height=3}
+ggplot(mdf, aes(x=cont_value, y=Predominant_habitat)) + 
+    labs(title = "Land use data across climates", y = "Land use type", x = "") +
+  geom_density_ridges2(alpha = .3) + facet_grid(.~covars, scales='free') 
+
+
+```
+
+## uncorrelated example
+```{r}
+x <- unique(confounded[, c("Longitude", "Latitude", "Region",  "Predominant_habitat","Country", "Biome", 
+                 "SS", "SSS","SSBS", "SSB", #"raunk_lf", 
+                 "m_cor", "p_cor", "mv_cor", "pv_cor")])
+
+mdf <- x %>% .[, which(names(.) %in% c("Predominant_habitat", "m_ind", "p_ind", "mv_ind", "pv_ind"))] 
+
+covars <- c("m_ind", "p_ind", "mv_ind", "pv_ind")
+
+mdf3 <- data.frame()
+
+for(i in covars){
+  mdf$covars <-paste(i)
+mdf2 <-mdf
+mdf3 <- rbind(mdf3, mdf2)}
+
+mdf <- mdf3
+rm(mdf2, mdf3)
+
+for(i in covars){
+mdf$cont_value[mdf$covars == i] <- mdf[,i][mdf$covars == i]}
+
+mdf <- mdf %>% .[, which(names(mdf) %nin% c("m_ind", "p_ind", "mv_ind", "pv_ind"))]
+
+```
+
+```{r fig.width= 5, fig.height=3}
+ggplot(mdf, aes(x=cont_value, y=Predominant_habitat)) + 
+    labs(title = "Land use data across climates", y = "Land use type", x = "") +
+  geom_density_ridges2(alpha = .3) + facet_grid(.~covars, scales='free') 
+
+
+```
 
