@@ -75,53 +75,53 @@ mydata$Predominant_habitat <- factor(mydata$Predominant_habitat)
  
 ## set up for weighted effects coding
 
-print("configure contrasts for model a")
-## main effects
-mydata$Predominant_habitat.wec <- factor(mydata$Predominant_habitat)
-contrasts(mydata$Predominant_habitat.wec) <- contr.wec(mydata$Predominant_habitat, "Urban")
-mydata$raunk_lf.wec <- factor(mydata$raunk_lf)
-contrasts(mydata$raunk_lf.wec) <- contr.wec(mydata$raunk_lf, "therophyte")
-## interactions
-mydata$hab_raunk_interaction <- mydata$Predominant_habitat
-mydata$hab_raunk_interaction <- wec.interact(mydata$Predominant_habitat.wec, mydata$raunk_lf.wec)
-mydata$map_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$map)
-mydata$map_var_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$map_var)
-mydata$mat_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$mat)
-mydata$mat_var_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$mat_var)
-mydata$spp_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$Species_richness)
-
-print("start running model a")
-
-oc_wec_merged_no_U_T <- glmmTMB(pres_abs ~ Predominant_habitat.wec + raunk_lf.wec + hab_raunk_interaction +
-                                    Species_richness +
-                                    map +
-                                    map_var +
-                                    mat +
-                                    mat_var +
-                                    spp_raunk_interaction +
-                                    map_raunk_interaction +
-                                    map_var_raunk_interaction +
-                                    mat_raunk_interaction +
-                                    mat_var_raunk_interaction +
-                           (1|Best_guess_binomial) +
-                           (1|SS) +
-                           (1|Class/Order/Family/Genus),
-                           ziformula= ~ 1,
-                         family = binomial,
-                         control = glmmTMBControl(optCtrl = list(iter.max = 10000, eval.max = 10000),
-                                                  profile = FALSE, collect = FALSE),
-                         data = mydata)
-
-if(exists("oc_wec_merged_no_U_T")) {
-  try(saveRDS(oc_wec_merged_no_U_T, "oc_wec_merged_no_U_T.rds"))
-} else warning("oc_wec_merged_no_U_T failed to run")
-
-print("ran model omitting Urban or therophyte, now running model omitting Primary forest and phanerophte")
+# print("configure contrasts for model a")
+# ## main effects
+# mydata$Predominant_habitat.wec <- factor(mydata$Predominant_habitat)
+# contrasts(mydata$Predominant_habitat.wec) <- contr.wec(mydata$Predominant_habitat, "Urban")
+# mydata$raunk_lf.wec <- factor(mydata$raunk_lf)
+# contrasts(mydata$raunk_lf.wec) <- contr.wec(mydata$raunk_lf, "therophyte")
+# ## interactions
+# mydata$hab_raunk_interaction <- mydata$Predominant_habitat
+# mydata$hab_raunk_interaction <- wec.interact(mydata$Predominant_habitat.wec, mydata$raunk_lf.wec)
+# mydata$map_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$map)
+# mydata$map_var_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$map_var)
+# mydata$mat_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$mat)
+# mydata$mat_var_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$mat_var)
+# mydata$spp_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$Species_richness)
+# 
+# print("start running model a")
+# 
+# oc_wec_merged_no_U_T <- glmmTMB(pres_abs ~ Predominant_habitat.wec + raunk_lf.wec + hab_raunk_interaction +
+#                                     Species_richness +
+#                                     map +
+#                                     map_var +
+#                                     mat +
+#                                     mat_var +
+#                                     spp_raunk_interaction +
+#                                     map_raunk_interaction +
+#                                     map_var_raunk_interaction +
+#                                     mat_raunk_interaction +
+#                                     mat_var_raunk_interaction +
+#                            (1|Best_guess_binomial) +
+#                            (1|SS) +
+#                            (1|Class/Order/Family/Genus),
+#                            ziformula= ~ 1,
+#                          family = binomial,
+#                          control = glmmTMBControl(optCtrl = list(iter.max = 10000, eval.max = 10000),
+#                                                   profile = FALSE, collect = FALSE),
+#                          data = mydata)
+# 
+# if(exists("oc_wec_merged_no_U_T")) {
+#   try(saveRDS(oc_wec_merged_no_U_T, "oc_wec_merged_no_U_T.rds"))
+# } else warning("oc_wec_merged_no_U_T failed to run")
+# 
+# print("ran model omitting Urban or therophyte, now running model omitting Primary forest and phanerophte")
 
 print("configure contrasts for model b")
 ## main effects
 mydata$Predominant_habitat.wec <- factor(mydata$Predominant_habitat)
-contrasts(mydata$Predominant_habitat.wec) <- contr.wec(mydata$Predominant_habitat, "Primary vegetation")
+contrasts(mydata$Predominant_habitat.wec) <- contr.wec(mydata$Predominant_habitat, "Mature secondary vegetation")
 mydata$raunk_lf.wec <- factor(mydata$raunk_lf)
 contrasts(mydata$raunk_lf.wec) <- contr.wec(mydata$raunk_lf, "phanerophyte")
 ## interactions
@@ -154,51 +154,51 @@ oc_wec_merged_no_PV_P <- glmmTMB(pres_abs ~ Predominant_habitat.wec + raunk_lf.w
                                                                           profile = FALSE, collect = FALSE),
                                                  data = mydata)
 
-if(exists("oc_wec_merged_no_PV_P")) {
-  try(saveRDS(oc_wec_merged_no_PV_P, "oc_wec_merged_no_PV_P.rds"))
-} else warning("oc_wec_merged_no_PV_P failed to run")
+if(exists("oc_wec_merged_no_M_P")) {
+  try(saveRDS(oc_wec_merged_no_PV_P, "oc_wec_merged_no_M_P.rds"))
+} else warning("oc_wec_merged_no_M_P failed to run")
 
 print("ran model omitting Primary forest and phanerophte, now running model omitting Pasture and cryptophyte")
 
-print("configure contrasts for model c")
-## main effects
-mydata$Predominant_habitat.wec <- factor(mydata$Predominant_habitat)
-contrasts(mydata$Predominant_habitat.wec) <- contr.wec(mydata$Predominant_habitat, "Pasture")
-mydata$raunk_lf.wec <- factor(mydata$raunk_lf)
-contrasts(mydata$raunk_lf.wec) <- contr.wec(mydata$raunk_lf, "cryptophyte")
-## interactions
-mydata$hab_raunk_interaction <- mydata$Predominant_habitat
-mydata$hab_raunk_interaction <- wec.interact(mydata$Predominant_habitat.wec, mydata$raunk_lf.wec)
-mydata$map_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$map)
-mydata$map_var_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$map_var)
-mydata$mat_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$mat)
-mydata$mat_var_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$mat_var)
-mydata$spp_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$Species_richness)
-
-print("start running model c")
-oc_wec_merged_no_P_C <- glmmTMB(pres_abs ~ Predominant_habitat.wec + raunk_lf.wec + hab_raunk_interaction +
-                                                    Species_richness +
-                                                    map +
-                                                    map_var +
-                                                    mat +
-                                                    mat_var +
-                                                    spp_raunk_interaction +
-                                                    map_raunk_interaction +
-                                                    map_var_raunk_interaction +
-                                                    mat_raunk_interaction +
-                                                    mat_var_raunk_interaction +
-                                                    (1|Best_guess_binomial) + 
-                                                    (1|SS) +
-                                                    (1|Class/Order/Family/Genus),
-                                                  ziformula= ~ 1,
-                                                  family = binomial, 
-                                                  control = glmmTMBControl(optCtrl = list(iter.max = 10000, eval.max = 10000), 
-                                                                           profile = FALSE, collect = FALSE),
-                                                  data = mydata)
-
-if(exists("oc_wec_merged_no_P_C")) {
-  try(saveRDS(oc_wec_merged_no_P_C, "oc_wec_merged_no_P_C.rds"))
-} else warning("oc_wec_merged_no_P_C failed to run")
+# print("configure contrasts for model c")
+# ## main effects
+# mydata$Predominant_habitat.wec <- factor(mydata$Predominant_habitat)
+# contrasts(mydata$Predominant_habitat.wec) <- contr.wec(mydata$Predominant_habitat, "Pasture")
+# mydata$raunk_lf.wec <- factor(mydata$raunk_lf)
+# contrasts(mydata$raunk_lf.wec) <- contr.wec(mydata$raunk_lf, "cryptophyte")
+# ## interactions
+# mydata$hab_raunk_interaction <- mydata$Predominant_habitat
+# mydata$hab_raunk_interaction <- wec.interact(mydata$Predominant_habitat.wec, mydata$raunk_lf.wec)
+# mydata$map_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$map)
+# mydata$map_var_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$map_var)
+# mydata$mat_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$mat)
+# mydata$mat_var_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$mat_var)
+# mydata$spp_raunk_interaction <- wec.interact(mydata$raunk_lf.wec, mydata$Species_richness)
+# 
+# print("start running model c")
+# oc_wec_merged_no_P_C <- glmmTMB(pres_abs ~ Predominant_habitat.wec + raunk_lf.wec + hab_raunk_interaction +
+#                                                     Species_richness +
+#                                                     map +
+#                                                     map_var +
+#                                                     mat +
+#                                                     mat_var +
+#                                                     spp_raunk_interaction +
+#                                                     map_raunk_interaction +
+#                                                     map_var_raunk_interaction +
+#                                                     mat_raunk_interaction +
+#                                                     mat_var_raunk_interaction +
+#                                                     (1|Best_guess_binomial) + 
+#                                                     (1|SS) +
+#                                                     (1|Class/Order/Family/Genus),
+#                                                   ziformula= ~ 1,
+#                                                   family = binomial, 
+#                                                   control = glmmTMBControl(optCtrl = list(iter.max = 10000, eval.max = 10000), 
+#                                                                            profile = FALSE, collect = FALSE),
+#                                                   data = mydata)
+# 
+# if(exists("oc_wec_merged_no_P_C")) {
+#   try(saveRDS(oc_wec_merged_no_P_C, "oc_wec_merged_no_P_C.rds"))
+# } else warning("oc_wec_merged_no_P_C failed to run")
 
 print("end")
 
