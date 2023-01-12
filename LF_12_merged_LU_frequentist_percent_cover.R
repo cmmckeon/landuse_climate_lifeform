@@ -103,7 +103,7 @@ print("configure contrasts for model b")
 
 ## main effects
 mydata$Predominant_habitat.wec <- factor(mydata$Predominant_habitat)
-contrasts(mydata$Predominant_habitat.wec) <- contr.wec(mydata$Predominant_habitat, "Primary forest")
+contrasts(mydata$Predominant_habitat.wec) <- contr.wec(mydata$Predominant_habitat, "Primary vegetation")
 mydata$raunk_lf.wec <- factor(mydata$raunk_lf)
 contrasts(mydata$raunk_lf.wec) <- contr.wec(mydata$raunk_lf, "phanerophyte")
 ## interactions
