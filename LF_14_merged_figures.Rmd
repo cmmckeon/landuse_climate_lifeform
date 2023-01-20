@@ -1,0 +1,401 @@
+---
+title: "LF_14_merged_figures"
+author: "Caroline McKeon"
+date: '2023-01-12'
+output: word_document
+---
+
+## DATA NEEDED:
+
+# f_oc_sum_merged - dataframe of results from merged occurrence model object - created in LF_13a_merged_oc_estimates.R
+# f_pc_sum_merged - dataframe of results from merged abundance model object - created in LF_13b_merged_pc_estimates.R
+
+
+
+```{r setup, include=FALSE}
+library(glmmTMB)
+library(lme4)
+library(data.table)
+library(ggplot2)
+library(sjPlot) ## for the set_theme function
+library(viridis)
+library(ggpubr)
+library(ggeffects)
+library(gtools)
+library(ggridges)
+library(papeR)
+library(kableExtra)
+library(tidyverse)
+library(cowplot)
+knitr::opts_chunk$set(
+	echo = FALSE,
+	message = FALSE,
+	fig.height = 9.7,
+	fig.width = 16
+)
+knitr::opts_chunk$set(fig.width=16, fig.height=9.7) 
+```
+
+
+```{r plotting themes}
+# set graphical parameters
+
+# blank theme
+set_theme(
+  base = theme_classic(),
+  axis.title.size = 2,
+  axis.textsize = 1.2,
+  legend.size = 2,
+  legend.title.size = 2,
+  geom.label.size = 3,
+  plot.margin = margin(6,6,6,6, "pt")
+)
+
+## text editing
+get_wraper <- function(width) {
+  function(x) {
+    lapply(strwrap(x, width = width, simplify = FALSE), paste, collapse="\n")}}
+## colour palette
+cb_pal <- c("#01665e", "#5ab4ac","#c7eae5", "#d8b365", 
+            "#8c510a")
+## function for getting magnetude of effect size
+
+mag <- function(x){sqrt((x)^2)}
+```
+
+
+```{r}
+# read in oc model
+f_oc_sum <- readRDS("f_oc_sum_merged.rds")
+
+f_oc_sum$landuse <-gsub(" vegetation", "", f_oc_sum$landuse, ignore.case = TRUE)
+f_oc_sum$landuse <- as.character(f_oc_sum$landuse)
+f_oc_sum$landuse[f_oc_sum$landuse == "Secondary (indeterminate age)"] <- "unknown Secondary"
+f_oc_sum$landuse <- factor(f_oc_sum$landuse)
+
+## Yvonne's ordering
+f_oc_sum$landuse <- factor(f_oc_sum$landuse, 
+                      levels = c("Primary", "unknown Secondary",  "Mature secondary", 
+                                 "Intermediate secondary", "Young secondary",
+                                 "Plantation forest", "Pasture", "Cropland", "Urban"))
+
+## create column for grey bars
+f_oc_sum$cat <- as.numeric(f_oc_sum$landuse)
+f_oc_sum$rep[f_oc_sum$landuse %in% c("Primary",  "Mature secondary", "Young secondary",
+                                    "Pasture", "Urban" )] <- "white"
+f_oc_sum$rep[f_oc_sum$landuse %in% c("unknown Secondary","Intermediate secondary",
+                                     "Plantation forest", "Cropland")] <- "grey"
+s <- f_oc_sum
+```
+
+```{r, include=FALSE}
+# read in pc model
+f_pc_sum <- readRDS("f_pc_sum_merged.rds")
+f_pc_sum$landuse <- as.character(f_pc_sum$landuse)
+f_pc_sum$landuse[f_pc_sum$clim == "species richness"] <- "Mature secondary"
+f_pc_sum <- f_pc_sum[order(-f_pc_sum$raunk_lf, f_pc_sum$landuse),]
+f_pc_sum$land_av <- 0
+f_pc_sum$land_av[which(is.na(f_pc_sum$raunk_lf) & !is.na(f_pc_sum$landuse))] <- 1
+
+f_pc_sum$landuse <-gsub(" vegetation", "", f_pc_sum$landuse, ignore.case = TRUE)
+f_pc_sum$landuse <- as.character(f_pc_sum$landuse)
+f_pc_sum$landuse[f_pc_sum$landuse == "Secondary (indeterminate age)"] <- "unknown Secondary"
+f_pc_sum$landuse <- factor(f_pc_sum$landuse)
+
+f_pc_sum$landuse <- factor(f_pc_sum$landuse)
+## Yvonne's ordering
+f_pc_sum$landuse <- factor(f_pc_sum$landuse, 
+                      levels = c("Primary", "unknown Secondary", "Mature secondary",
+                                 "Intermediate secondary", "Young secondary",
+                                 "Plantation forest", "Pasture", "Cropland", "Urban"))
+f_pc_sum$cat <- as.numeric(f_pc_sum$landuse)
+f_pc_sum$rep[f_pc_sum$landuse %in% c("Primary", "Mature secondary", "Young secondary",
+                                     "Pasture", "Urban" )] <- "white"
+f_pc_sum$rep[f_pc_sum$landuse %in% c("unknown Secondary","Intermediate secondary",
+                                     "Plantation forest", "Cropland")] <- "grey"
+
+```
+
+
+```{r fig.width=16, fig.height=9.7, include=FALSE}
+## make land use occurrence plot
+f_oc_sum$eff_sz <-f_oc_sum$eff_sz - f_oc_sum$Estimate[f_oc_sum$rn == "(Intercept)"]
+
+lu_oc <- ggplot(f_oc_sum[which(!is.na(f_oc_sum$landuse) & !is.na(f_oc_sum$raunk_lf)),], 
+                    aes(landuse, eff_sz, colour = raunk_lf)) + 
+  geom_hline(yintercept= f_oc_sum$eff_sz[f_oc_sum$rn == "(Intercept)"], alpha = 0.8) +
+  geom_line() +
+  geom_rect(data = f_oc_sum[f_oc_sum$rep != "white",],
+             aes(xmin = cat -0.5, xmax = cat+0.5, ymin = -Inf, ymax = Inf), col = "white", alpha = 0.015) +
+  geom_crossbar(data = f_oc_sum[f_oc_sum$land_av ==1,], aes(ymin= eff_sz, ymax = eff_sz), color = "grey", size = 0.8) + 
+  geom_pointrange(data = f_oc_sum[which(!is.na(f_oc_sum$landuse) & !is.na(f_oc_sum$raunk_lf)),], 
+                    aes(landuse, eff_sz, colour = raunk_lf, ymin=eff_sz - ci, ymax=eff_sz + ci), 
+                    position = position_dodge(0.5), size = 1) +
+    theme(axis.title.x = element_blank(), title = element_blank()) +
+   theme(axis.text.x = element_blank()) +
+  scale_x_discrete(labels = get_wraper(10)) +
+  labs(colour = "Life form", y = "Log Odds of Occurrence*") +
+   scale_color_viridis(discrete = TRUE) 
+
+f_oc_sum <- s
+```
+
+```{r fig.width=16, fig.height=9.7, include=FALSE}
+## make land use abundance plot
+lu_pc <- ggplot(f_pc_sum[which(!is.na(f_pc_sum$landuse) & !is.na(f_pc_sum$raunk_lf)),], 
+                    aes(landuse, eff_sz, colour = raunk_lf)) + 
+  geom_hline(yintercept= f_pc_sum$Estimate[f_pc_sum$rn == "(Intercept)"], alpha = 0.8) +
+  geom_line() +
+  geom_rect(data = f_pc_sum[f_pc_sum$rep != "white",],
+            aes(xmin = cat -0.5, xmax = cat+0.5, ymin = -Inf, ymax = Inf), col = "white", alpha = 0.015) +
+
+  geom_crossbar(data = f_pc_sum[f_pc_sum$land_av ==1  & f_pc_sum$clim != "species richness",], aes(ymin= eff_sz, ymax = eff_sz), color = "grey", size = 0.8) +
+
+  geom_pointrange(data = f_pc_sum[which(!is.na(f_pc_sum$landuse) & !is.na(f_pc_sum$raunk_lf) & f_pc_sum$clim != "species richness"),],
+                    aes(landuse, eff_sz, colour = raunk_lf, ymin=eff_sz - ci, ymax=eff_sz + ci),
+                    position = position_dodge(0.5), size = 1) +
+   theme(axis.text.x = element_text(angle = 45, vjust = 0.5, margin = margin(t = 6, r = 0, b = 0, l = 0))) +
+  scale_x_discrete(labels = get_wraper(10)) +
+  labs(colour = "Life form", y = "Abundance (logit(%cover))", x = "Land use") +
+  scale_color_viridis(discrete = TRUE)
+
+```
+
+```{r fig.width=13, fig.height=9.7, include=FALSE}
+f_oc_sum$clim <- factor(f_oc_sum$clim)
+f_oc_sum <- f_oc_sum[order(-f_oc_sum$clim, f_oc_sum$raunk_lf)]
+f_oc_sum$labs <- as.character(0)
+f_oc_sum$labs[f_oc_sum$clim == "map"] <- "MAP"
+f_oc_sum$labs[f_oc_sum$clim == "map_var"] <- "MAP variation"
+f_oc_sum$labs[f_oc_sum$clim == "mat"] <- "MAT"
+f_oc_sum$labs[f_oc_sum$clim == "mat_var"] <- "MAT variation"
+
+## make climate occurrence plot
+clim_oc <-ggplot(f_oc_sum[which(!is.na(f_oc_sum$raunk_lf) & f_oc_sum$clim != 0 & f_oc_sum$clim != "species richness"),], aes(labs, eff_sz, colour = raunk_lf)) + 
+  geom_hline(yintercept=0, alpha = 0.3) + 
+  geom_line() + 
+  geom_pointrange(aes(ymin=eff_sz - ci, ymax=eff_sz + ci), position = position_dodge(0.5), size = 1) + 
+  theme(title = element_blank(), axis.text.x  = element_blank(),
+        axis.title.x = element_blank()) +
+  labs(colour = "Life forms", y = "Log Odds of Occurrence", x = "Climate and Species richness") +
+    scale_color_viridis(discrete = TRUE) +
+   scale_x_discrete(labels = get_wraper(10)) 
+
+```
+
+```{r fig.height=9.7, fig.width=13, include=FALSE}
+f_pc_sum$clim <- factor(f_pc_sum$clim)
+f_pc_sum <- f_pc_sum[order(-f_pc_sum$clim, f_pc_sum$raunk_lf)]
+f_pc_sum$labs <- as.character(0)
+f_pc_sum$labs[f_pc_sum$clim == "map"] <- "MAP"
+f_pc_sum$labs[f_pc_sum$clim == "map_var"] <- "MAP variation"
+f_pc_sum$labs[f_pc_sum$clim == "mat"] <- "MAT"
+f_pc_sum$labs[f_pc_sum$clim == "mat_var"] <- "MAT variation"
+
+## make climate abundance plot
+clim_pc <-ggplot(f_pc_sum[which(!is.na(f_pc_sum$raunk_lf) & f_pc_sum$clim != 0 & f_pc_sum$clim != "species richness"),]
+             , aes(labs, eff_sz, colour = raunk_lf)) + 
+  geom_hline(yintercept=0, alpha = 0.3) + 
+  geom_line() +
+  geom_pointrange(aes(ymin=eff_sz - ci, ymax=eff_sz + ci), position = position_dodge(0.5), size = 1) + 
+   theme(title = element_blank()) + #,axis.text.x = element_text(margin = margin(t = 10, r = 0, b = 10, l = 0))) +
+     theme(axis.text.x = element_text(angle = 45, vjust = 0.5, margin = margin(t = 6, r = 0, b = 0, l = 0))) +
+  labs(colour = "Life forms", y = "Abundance (logit(%cover))", x = "Climate") + 
+  scale_color_viridis(discrete = TRUE) +
+   scale_x_discrete(labels = get_wraper(10)) 
+
+```
+
+```{r}
+# tidy all plots for presenting in single panel
+lu_oc1 <- lu_oc + theme(axis.text.x = element_blank(), axis.title.x = element_blank(),
+                         axis.ticks.x = element_blank(),
+                        legend.key = element_rect(colour = NA, fill = NA)) +
+  ylim(-0.85, 0.65) 
+lu_pc1 <- lu_pc + theme(legend.key = element_rect(colour = NA, fill = NA)) + ylim(-1.7, 0.51) + labs(x = "Land use")
+clim_oc1 <- clim_oc + theme(axis.text.x = element_blank(), axis.title.x = element_blank(),
+                         axis.ticks.x = element_blank(), axis.title.y = element_blank(),   legend.key = element_rect(colour = NA, fill = NA)) + ylim(-1.2, 0.3) 
+clim_pc1 <- clim_pc + theme(axis.title.y = element_blank(),   legend.key = element_rect(colour = NA, fill = NA)) + ylim(-1.7, 0.51) + labs(x = "Climate")
+```
+
+```{r fig.height=12, fig.width=16}
+oc <- ggarrange(lu_oc1, clim_oc1, labels = c("A", "B"), widths = c(1.7, 1), align = "hv", common.legend = TRUE, legend = "top")
+pc <- ggarrange(lu_pc1, clim_pc1, labels = c("C", "D"), widths = c(1.7, 1), align = "hv", legend = "none")
+
+resp <-ggarrange(oc, pc, nrow = 2, ncol = 1, align = "v", legend = "top", heights = c(1, 1.2)) +
+  theme(plot.margin = margin(0,0,0,0, "cm")) 
+annotate_figure(resp, top = text_grob("Effects of merged land use and climate on life form", #color = "black",
+                                      face = "bold", size = 30))
+
+```
+
+```{r}
+resp <-ggarrange(oc, pc, nrow = 2, ncol = 1, align = "v", legend = "top", heights = c(1, 1.2)) +
+  theme(plot.margin = margin(0,0,0,0, "cm")) 
+annotate_figure(resp, top = text_grob("Effects of land use and climate on life form", #color = "black", 
+                                      face = "bold", size = 30))
+
+```
+
+
+## oc effect size comparison histograms
+```{r}
+
+d <- f_oc_sum[which(!is.na(f_oc_sum$landuse) & !is.na(f_oc_sum$raunk_lf)),]
+d$landuse <- factor(d$landuse)
+for(i in levels(d$landuse)){
+  d$land_range[d$landuse == i] <- max(d$eff_sz[d$landuse == i]) - min(d$eff_sz[d$landuse == i])
+}
+d <- unique(d[, c(9,16)])
+
+c <- f_oc_sum[which(!is.na(f_oc_sum$raunk_lf) & f_oc_sum$clim != 0 & f_oc_sum$clim != "species richness")]
+c$clim<- factor(c$clim)
+for(i in levels(c$clim)){
+  c$clim_range[c$clim == i] <- max(c$eff_sz[c$clim == i]) - min(c$eff_sz[c$clim == i])
+}
+c <- unique(c[, c(11,16)])
+
+g <- f_oc_sum[which(!is.na(f_oc_sum$landuse) & !is.na(f_oc_sum$raunk_lf)),]
+for(i in levels(g$raunk_lf)){
+  g$raunk_lf_range[g$raunk_lf == i] <- max(g$eff_sz[g$raunk_lf == i]) - min(g$eff_sz[g$raunk_lf == i])
+}
+g <- unique(g[, c(10,16)])
+```
+
+```{r}
+set_theme(
+  base = theme_classic(),
+  axis.title.size = 1,
+  axis.textsize = 1,
+  legend.size = 1,
+  legend.title.size = 1,
+  geom.label.size = 1,
+  plot.margin = margin(0.1,0.1,0.1,0.5, "pt")
+)
+```
+
+```{r}
+hist_oc <- ggplot(f_oc_sum[which(!is.na(f_oc_sum$landuse) & !is.na(f_oc_sum$raunk_lf))]) +
+  geom_histogram(aes(mag(eff_sz - f_oc_sum$Estimate[f_oc_sum$rn == "(Intercept)"])),  bins = 40,
+                 color="#FFB000", fill="#FFB000", size=1, alpha = 0.5) +
+    geom_histogram(data = f_oc_sum[which(!is.na(f_oc_sum$raunk_lf) & f_oc_sum$clim != 0 & f_oc_sum$clim != "species richness")],  bins = 40,
+                   aes(x = mag(eff_sz)),
+                 color="#A715AD", fill= "white", size = 1, alpha= 0.5) + ylim(0, 6.1) +
+  scale_x_continuous(limits = c(0, 1.1), oob = scales::oob_keep)
+#hist_oc
+
+```
+
+```{r}
+oc_hist_land_range <- ggplot(d) +
+  geom_histogram(aes(mag(land_range)),  bins = 40,
+                 color="#FFB000", fill="#FFB000", size=1, alpha = 0.5) +
+    geom_histogram(data = c, aes(x = mag(clim_range)),  bins = 40,
+                 color="#A715AD", fill="white", size=1, alpha = 0.5) + ylim(0, 6.1) +
+  scale_x_continuous(limits = c(0, 1.1), oob = scales::oob_keep)
+#oc_hist_land_range
+```
+
+```{r}
+oc_hist_raunk_range <- ggplot(g) +
+    geom_histogram(aes(mag(raunk_lf_range)), bins = 40,
+                 color="#FFB000", fill="#FFB000", size=1, alpha = 0.5) +
+  geom_histogram(data = f_oc_sum[which(!is.na(f_oc_sum$raunk_lf) & f_oc_sum$clim != 0 & f_oc_sum$clim != "species richness")],   bins = 40,
+                 aes(x = mag(eff_sz)),
+                 color="#A715AD", fill= "white", size=1, alpha = 0.5) +
+  labs(x = "Magnitude of Occurrence effect sizes", size = 16) + ylim(0, 6.1) +
+  scale_x_continuous(limits = c(0, 1.1), oob = scales::oob_keep)
+#oc_hist_raunk_range
+```
+
+```{r}
+# tidy all plots for presenting in single panel
+hist_oc1 <- hist_oc + theme(title = element_blank(), axis.title.y = element_blank(), axis.title.x = element_blank()) 
+oc_hist_land_range1 <- oc_hist_land_range + theme(axis.title.y = element_blank(), title = element_blank(), axis.title.x = element_blank()) 
+oc_hist_raunk_range1 <- oc_hist_raunk_range + theme(title = element_blank(), axis.title.y = element_blank()) 
+
+```
+
+```{r fig.height=7, fig.width=4}
+panels <-ggarrange(hist_oc1, #oc_hist_land_range1, 
+                   oc_hist_raunk_range1, nrow = 2, ncol = 1, align = "hv", heights = c(1, 1)) +
+  theme(plot.margin = margin(0.1,0.1,0.1,0.1, "cm")) 
+annotate_figure(panels,  left = text_grob("Count", rot = 90, size = 16))
+```
+
+## pc effect size comparison histograms
+```{r}
+d <- f_pc_sum[which(!is.na(f_pc_sum$landuse) & !is.na(f_pc_sum$raunk_lf)& f_pc_sum$clim != "species richness"),]
+d$landuse <- factor(d$landuse)
+for(i in levels(d$landuse)){
+  d$land_range[d$landuse == i] <- max(d$eff_sz[d$landuse == i]) - min(d$eff_sz[d$landuse == i])
+}
+d <- unique(d[, c(8,17)])
+
+c <- f_pc_sum[which(!is.na(f_pc_sum$raunk_lf) & f_pc_sum$clim != 0 & f_pc_sum$clim != "species richness")]
+c$clim<- factor(c$clim)
+for(i in levels(c$clim)){
+  c$clim_range[c$clim == i] <- max(c$eff_sz[c$clim == i]) - min(c$eff_sz[c$clim == i])
+}
+c <- unique(c[, c(10,17)])
+
+g <- f_pc_sum[which(!is.na(f_pc_sum$landuse) & !is.na(f_pc_sum$raunk_lf)& f_pc_sum$clim != "species richness"),]
+for(i in levels(g$raunk_lf)){
+  g$raunk_lf_range[g$raunk_lf == i] <- max(g$eff_sz[g$raunk_lf == i]) - min(g$eff_sz[g$raunk_lf == i])
+}
+g <- unique(g[, c(9,17)])
+```
+
+
+```{r}
+hist_pc <- ggplot(f_pc_sum[which(!is.na(f_pc_sum$landuse) & !is.na(f_pc_sum$raunk_lf))]) +
+  geom_histogram(aes(mag(eff_sz - f_pc_sum$Estimate[f_pc_sum$rn == "(Intercept)"])),  bins = 40,
+                 color="#FFB000", fill="#FFB000", size=1, alpha = 0.5) +
+    geom_histogram(data = f_pc_sum[which(!is.na(f_pc_sum$raunk_lf) & f_pc_sum$clim != 0 & f_pc_sum$clim != "species richness")], bins = 40,
+                   aes(x = mag(eff_sz)),
+                 color="#A715AD", fill= "white", size = 1, alpha= 0.5) +  ylim(0, 11) +
+  scale_x_continuous(limits = c(0, 1.5), oob = scales::oob_keep)
+#hist_pc
+```
+
+```{r}
+pc_hist_land_range <- ggplot(d) +
+  geom_histogram(aes(mag(land_range)),  bins = 40,
+                 color="#FFB000", fill="#FFB000", size=1, alpha = 0.5) +
+    geom_histogram(data = c, aes(x = mag(clim_range)),  bins = 40,
+                 color="#A715AD", fill="white", size=1, alpha = 0.5) + ylim(0, 11) +
+  scale_x_continuous(limits = c(0, 1.5), oob = scales::oob_keep)
+#pc_hist_land_range
+```
+
+```{r}
+pc_hist_raunk_range <- ggplot(g) +
+    geom_histogram(aes(mag(raunk_lf_range)),  bins = 40,
+                 color="#FFB000", fill="#FFB000", size=1, alpha = 0.5) +
+  geom_histogram(data = f_pc_sum[which(!is.na(f_pc_sum$raunk_lf) & f_pc_sum$clim != 0 & f_pc_sum$clim != "species richness")],  bins = 40,
+                 aes(x = mag(eff_sz)),
+                 color="#A715AD", fill= "white", size=1, alpha = 0.5) +
+  labs(x = "Magnitude of Abundance effect sizes", size = 2) + ylim(0, 11) +
+  scale_x_continuous(limits = c(0, 1.5), oob = scales::oob_keep)
+#pc_hist_raunk_range
+```
+
+```{r}
+# tidy all plots for presenting in single panel
+hist_pc1 <- hist_pc + theme(title = element_blank(), axis.title.y = element_blank(), axis.title.x = element_blank()) 
+pc_hist_land_range1 <- pc_hist_land_range + theme(axis.title.y = element_blank(), title = element_blank(), axis.title.x = element_blank()) 
+pc_hist_raunk_range1 <- pc_hist_raunk_range + theme(title = element_blank(), axis.title.y = element_blank()) 
+```
+
+
+```{r fig.height=7, fig.width=4}
+panels <-ggarrange(hist_pc1, pc_hist_raunk_range1, nrow = 2, ncol = 1, align = "hv")
+annotate_figure(panels, left = text_grob("Count", rot = 90, size = 14))
+```
+
+```{r fig.height=6, fig.width=8}
+panels <-ggarrange(hist_oc1, hist_pc1, oc_hist_land_range1, pc_hist_land_range1, oc_hist_raunk_range1, pc_hist_raunk_range1, nrow = 3, ncol = 2, align = "hv", labels = c("A", "B", "C", "D", "E", "F"), label.x = 0.1) +
+  theme(plot.margin = margin(2,0.1,0.1,0.1, "cm")) 
+annotate_figure(panels, top = text_grob("Comparison of magnitude of effect sizes", face = "bold", size = 15),
+                                        left = text_grob("Count", rot = 90, size = 10))
+```

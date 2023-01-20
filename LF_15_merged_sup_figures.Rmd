@@ -1,14 +1,14 @@
 ---
-title: "LF_10_sup_figures"
+title: "LF_15_merged_sup_figures"
 author: "Caroline McKeon"
-date: "10/19/2021"
+date: '2023-01-17'
 output: word_document
 ---
 
 ## DATA NEEDED:
 
-# f_oc_sum - dataframe of results from occurrence model object - created in LF_06b_oc_estimates.R
-# f_pc_sum - dataframe of results from abundance model object - created in LF_06a_pc_estimates.R
+# f_oc_sum_merged - dataframe of results from merged occurrence model object - created in LF_13a_merged_oc_estimates.R
+# f_pc_sum_merged - dataframe of results from merged abundance model object - created in LF_13b_merged_pc_estimates.R
 
 # Data_ModelDF.rds  - Model dataframe with 624696 obs of 24 variables, created in LF_01_data_handling.R
 
@@ -68,7 +68,7 @@ cb_pal <- c("#01665e", "#5ab4ac","#c7eae5", "#d8b365",
 
 ```{r}
 # read in oc model
-f_oc_sum <- readRDS("f_oc_sum.rds")
+f_oc_sum <- readRDS("f_oc_sum_merged.rds")
 f_oc_sum$land_av <- NA
 f_oc_sum$land_av[which(is.na(f_oc_sum$raunk_lf) & !is.na(f_oc_sum$landuse))] <- 1
 
@@ -79,21 +79,21 @@ f_oc_sum$landuse <- factor(f_oc_sum$landuse)
 
 ## Yvonne's ordering
 f_oc_sum$landuse <- factor(f_oc_sum$landuse, 
-                      levels = c("Primary forest", "unknown Secondary",  "Mature secondary", 
+                      levels = c("Primary", "unknown Secondary",  "Mature secondary", 
                                  "Intermediate secondary", "Young secondary",
                                  "Plantation forest", "Primary non-forest", "Pasture", "Cropland", "Urban"))
 
 ## create column for grey bars
 f_oc_sum$cat <- as.numeric(f_oc_sum$landuse)
-f_oc_sum$rep[f_oc_sum$landuse %in% c("Primary forest",  "Mature secondary", "Young secondary",
-                                     "Primary non-forest", "Cropland")] <- "white"
+f_oc_sum$rep[f_oc_sum$landuse %in% c("Primary",  "Mature secondary", "Young secondary",
+                                    "Pasture", "Urban" )] <- "white"
 f_oc_sum$rep[f_oc_sum$landuse %in% c("unknown Secondary","Intermediate secondary",
-                                     "Plantation forest", "Pasture", "Urban")] <- "grey"
+                                     "Plantation forest", "Cropland")] <- "grey"
 ```
 
 ```{r, include=FALSE}
 # read in pc model
-f_pc_sum <- readRDS("f_pc_sum.rds")
+f_pc_sum <- readRDS("f_pc_sum_merged.rds")
 f_pc_sum$landuse <- as.character(f_pc_sum$landuse)
 f_pc_sum$landuse[f_pc_sum$clim == "species richness"] <- "Mature secondary"
 f_pc_sum <- f_pc_sum[order(-f_pc_sum$raunk_lf, f_pc_sum$landuse),]
@@ -108,14 +108,14 @@ f_pc_sum$landuse <- factor(f_pc_sum$landuse)
 f_pc_sum$landuse <- factor(f_pc_sum$landuse)
 ## Yvonne's ordering
 f_pc_sum$landuse <- factor(f_pc_sum$landuse, 
-                      levels = c("Primary forest", "unknown Secondary", "Mature secondary",
+                      levels = c("Primary", "unknown Secondary", "Mature secondary",
                                  "Intermediate secondary", "Young secondary",
                                  "Plantation forest", "Primary non-forest", "Pasture", "Cropland", "Urban"))
 f_pc_sum$cat <- as.numeric(f_pc_sum$landuse)
-f_pc_sum$rep[f_pc_sum$landuse %in% c("Primary forest", "Mature secondary", "Young secondary",
-                                     "Primary non-forest", "Cropland")] <- "white"
+f_pc_sum$rep[f_pc_sum$landuse %in% c("Primary", "Mature secondary", "Young secondary",
+                                     "Pasture", "Urban" )] <- "white"
 f_pc_sum$rep[f_pc_sum$landuse %in% c("unknown Secondary","Intermediate secondary",
-                                     "Plantation forest", "Pasture", "Urban")] <- "grey"
+                                     "Plantation forest", "Cropland")] <- "grey"
 
 ```
 
@@ -127,6 +127,12 @@ if(!exists("ModelDF")) {
   } else warning("ModelDF does not exist in this directory")
 }
 
+## merge primary land uses
+ModelDF$Predominant_habitat <- as.character(ModelDF$Predominant_habitat)
+ModelDF$Predominant_habitat[ModelDF$Predominant_habitat %in% c("Primary forest", "Primary non-forest")] <- "Primary vegetation"
+ModelDF$Predominant_habitat <- factor(ModelDF$Predominant_habitat)
+
+
 ModelDF$Predominant_habitat <-gsub(" vegetation", "", ModelDF$Predominant_habitat, ignore.case = TRUE)
 ModelDF$Predominant_habitat <- as.character(ModelDF$Predominant_habitat)
 ModelDF$Predominant_habitat[ModelDF$Predominant_habitat == "Secondary (indeterminate age)"] <- "unknown Secondary"
@@ -134,9 +140,9 @@ ModelDF$Predominant_habitat <- factor(ModelDF$Predominant_habitat)
 
 ## Yvonne's ordering
 ModelDF$Predominant_habitat <- factor(ModelDF$Predominant_habitat, 
-                      levels = c("Primary forest", "unknown Secondary",  "Mature secondary", 
+                      levels = c("Primary", "unknown Secondary",  "Mature secondary", 
                                  "Intermediate secondary", "Young secondary",
-                                 "Plantation forest", "Primary non-forest", "Pasture", "Cropland", "Urban"))
+                                 "Plantation forest", "Pasture", "Cropland", "Urban"))
 
 ## get percent cover data for sample sizes table
 mydata <- ModelDF
@@ -515,9 +521,8 @@ ggplot(y, aes(x=Biome)) +
   labs(title = "A", x = "Biome") 
 ```
 
-
 ## prep data for ridge plots
-```{r}
+```{r eval=FALSE, include=FALSE}
 x <- unique(ModelDF[, c("Longitude", "Latitude", "Region",  "Predominant_habitat","Country", "Biome", 
                  "SS", "SSS","SSBS", "SSB", #"raunk_lf", 
                  "map", "mat", "map_var", "mat_var")])
@@ -543,12 +548,32 @@ mdf <- mdf %>% .[, which(names(mdf) %nin% c( "map", "mat", "map_var", "mat_var")
 
 ```
 
-```{r fig.width= 5, fig.height=3}
+```{r fig.width= 5, fig.height=3, eval=FALSE, include=FALSE}
 ggplot(mdf, aes(x=cont_value, y=Predominant_habitat)) + 
     labs(title = "Land use data across climates", y = "Land use type", x = "") +
   geom_density_ridges2(alpha = .3) + facet_grid(.~covars, scales='free') 
+```
 
+```{r}
+x <- unique(ModelDF[, c("Longitude", "Latitude", "Predominant_habitat",
+                 "map", "mat", "map_var", "mat_var")])
 
+x <- x[, c("Predominant_habitat",
+                 "map", "mat", "map_var", "mat_var")]
+```
+
+```{r}
+m <- lm(x$map ~ x$Predominant_habitat)
+t <- lm(x$mat~ x$Predominant_habitat)
+mv <- lm(x$map_var ~ x$Predominant_habitat)
+tv <- lm(x$mat_var ~ x$Predominant_habitat)
+```
+
+```{r eval=FALSE, include=FALSE}
+summary(m) ## 
+summary(t) ##
+summary(mv) ## 
+summary(tv) ## 
 ```
 
 
