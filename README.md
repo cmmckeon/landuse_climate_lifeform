@@ -58,6 +58,10 @@ LF_04a_NO_RICH_frequentist_percent_cover.R
 
 LF_04b_NO_RICH_frequentist_occurrence.R
 
+LF_12_merged_LU_frequentist_occurrence.R
+
+LF_12_merged_LU_frequentist_percent_cover.R
+
 # On a desktop: 
 
 #LF_05_diagnostics_frequentist.R
@@ -79,5 +83,19 @@ LF_09b_sups_panel_figs.Rmd
 LF_10_sups_figures.Rmd
 
 LF_11_sups_tables.Rmd
+
+LF_13a_merged_oc_estimates.Rmd
+
+LF_13b_merged_pc_estimates.Rmd
+
+LF_14_merged_figures.Rmd
+
+LF_15_merged_sup_figures.Rmd
+
+LF_16_merged_sup_tables.Rmd
+
+
+
+
 
 
